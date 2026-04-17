@@ -1,58 +1,74 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
-import { fetchProducts } from '../services/api';
+import { fetchProducts, fetchCategories } from '../services/api';
 import { Search, ChevronDown, Filter } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '../context/AuthContext';
 
 const CategoryPage = () => {
   const { slug } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   
   const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [selectedSubCategoryId, setSelectedSubCategoryId] = useState('');
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('relevance');
-  const [categoryName, setCategoryName] = useState('Category');
+  const [category, setCategory] = useState(null);
 
-  // Currently relying on old mock categories/product logic until backend Category API is used extensively for products
   useEffect(() => {
-    // In a real app, you'd fetch products by category slug: /api/products?category=slug
-    const loadProducts = async () => {
+    const loadInitialData = async () => {
+      setLoading(true);
       try {
-        const allProds = await fetchProducts();
+        const [allProdsRaw, allCatsRaw] = await Promise.all([
+          fetchProducts(),
+          fetchCategories()
+        ]);
         
-        // Example mock logic mapping
-        // If slug matches something, filter it. Else show all.
-        let filtered = allProds;
-        if (slug) {
-           filtered = allProds.filter(p => 
-              p.category.toLowerCase() === slug.toLowerCase() || 
-              p.category === slug ||
-              // fallback map
-              (slug === 'dairy' && p.category === 'dairy')
-           );
-           setCategoryName(slug.charAt(0).toUpperCase() + slug.slice(1));
-           
-           if(filtered.length === 0) filtered = allProds; // fallback to all for demo
+        const allCats = allCatsRaw || [];
+
+        // Filter based on customerType
+        let filteredProds = allProdsRaw || [];
+        if (user?.role === 'b2b') {
+          filteredProds = filteredProds.filter(p => p.customerType === 'BUSINESS' || p.customerType === 'BOTH');
+        } else if (user?.role === 'admin') {
+          // Admin see all
+        } else {
+          filteredProds = filteredProds.filter(p => p.customerType === 'NORMAL' || p.customerType === 'BOTH');
         }
-        
-        setProducts(filtered);
+
+        setCategories(allCats);
+        const currentCat = allCats.find(c => c && (c.id === slug || c.slug === slug));
+        setCategory(currentCat || null);
+
+        if (currentCat) {
+          setProducts(filteredProds.filter(p => p.categoryId === currentCat.id));
+        } else {
+          setProducts(filteredProds);
+        }
       } catch (err) {
-        console.error("Failed to load products", err);
+        console.error("Failed to load category page", err);
+        setProducts([]);
+        setCategories([]);
       } finally {
         setLoading(false);
       }
     };
-    loadProducts();
+    loadInitialData();
   }, [slug]);
 
   // Filtering & Sorting Logic
   const processedProducts = products
-    .filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    .filter(p => p && p.name && p.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    .filter(p => selectedSubCategoryId ? p.subCategoryId === selectedSubCategoryId : true)
     .sort((a, b) => {
-      if (sortBy === 'price-low') return parseFloat(a.b2cPrice) - parseFloat(b.b2cPrice);
-      if (sortBy === 'price-high') return parseFloat(b.b2cPrice) - parseFloat(a.b2cPrice);
+      const priceA = parseFloat(a.b2cNewPrice || a.b2cPrice || 0);
+      const priceB = parseFloat(b.b2cNewPrice || b.b2cPrice || 0);
+      if (sortBy === 'price-low') return priceA - priceB;
+      if (sortBy === 'price-high') return priceB - priceA;
       return 0; // relevance
     });
 
@@ -61,14 +77,35 @@ const CategoryPage = () => {
       <div className="max-w-[1400px] mx-auto px-4 lg:px-8">
         
         {/* Header & Breadcrumb */}
-        <div className="mb-8">
-           <div className="text-sm text-slate-500 mb-2 flex items-center gap-2">
-             <button onClick={() => navigate('/')} className="hover:text-[var(--secondary)]">Home</button> 
-             <span>/</span> 
-             <span className="text-slate-800 font-bold capitalize">{categoryName}</span>
-           </div>
-           <h1 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tight capitalize">{categoryName}</h1>
-        </div>
+         <div className="mb-8">
+            <div className="text-sm text-slate-500 mb-2 flex items-center gap-2">
+              <button onClick={() => navigate('/')} className="hover:text-[var(--secondary)] font-bold">Home</button> 
+              <span>/</span> 
+              <span className="text-slate-800 font-bold">{category ? category.name : 'All Products'}</span>
+            </div>
+            <h1 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tight">{category ? category.name : 'Products'}</h1>
+            
+            {/* Subcategories Filter */}
+            {category?.subcategories?.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-6">
+                <button 
+                  onClick={() => setSelectedSubCategoryId('')}
+                  className={`px-5 py-2 rounded-full text-sm font-black transition-all ${!selectedSubCategoryId ? 'bg-[var(--secondary)] text-white shadow-lg' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}`}
+                >
+                  All {category.name}
+                </button>
+                {category.subcategories.map(sub => (
+                  <button 
+                    key={sub.id}
+                    onClick={() => setSelectedSubCategoryId(sub.id)}
+                    className={`px-5 py-2 rounded-full text-sm font-black transition-all ${selectedSubCategoryId === sub.id ? 'bg-[var(--secondary)] text-white shadow-lg' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}`}
+                  >
+                    {sub.name}
+                  </button>
+                ))}
+              </div>
+            )}
+         </div>
 
         {/* Toolbar: Search & Sort */}
         <div className="flex flex-col md:flex-row gap-4 mb-10 w-full justify-between items-center bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
@@ -77,7 +114,7 @@ const CategoryPage = () => {
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
               <input 
                 type="text" 
-                placeholder={`Search in ${categoryName}...`}
+                placeholder={`Search in ${category?.name || 'products'}...`}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full bg-slate-50 pl-12 pr-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-[var(--secondary)] transition text-sm font-semibold text-slate-800"
@@ -115,7 +152,7 @@ const CategoryPage = () => {
         ) : processedProducts.length > 0 ? (
              <motion.div 
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-x-3 gap-y-6"
+                className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-2 md:gap-4"
              >
                 <AnimatePresence>
                   {processedProducts.map(product => (
@@ -135,7 +172,7 @@ const CategoryPage = () => {
         ) : (
              <div className="text-center py-20 bg-white rounded-3xl border border-slate-100 shadow-sm">
                 <h3 className="text-xl font-bold text-slate-800 mb-2">No products found</h3>
-                <p className="text-slate-500">Try adjusting your search criteria in {categoryName}.</p>
+                <p className="text-slate-500">Try adjusting your search criteria in {category?.name || 'this category'}.</p>
              </div>
         )}
       </div>

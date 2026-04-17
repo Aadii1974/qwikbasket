@@ -6,6 +6,8 @@ const Category = sequelize.define('Category', {
   name: { type: DataTypes.STRING, allowNull: false, unique: true },
   slug: { type: DataTypes.STRING, allowNull: false, unique: true },
   image: { type: DataTypes.STRING, allowNull: true },
+  // If true, products in this category get vegetable delivery slots
+  isVegetable: { type: DataTypes.BOOLEAN, defaultValue: false },
 }, { timestamps: true });
 
 module.exports = Category;

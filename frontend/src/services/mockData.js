@@ -15,10 +15,22 @@ export const HERO_BANNERS = [
   { id: 'h3', title: 'Craving Sweets? Fast Delivery!', image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&q=80&w=1200', bg: 'linear-gradient(to right, #ff0844 0%, #ffb199 100%)' }
 ];
 
+export const B2B_HERO_BANNERS = [
+  { id: 'bh1', title: 'Scale your Business with Wholesale', image: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&q=80&w=1200', bg: 'linear-gradient(to right, #1e3a8a 0%, #1e40af 100%)' },
+  { id: 'bh2', title: 'Bulk Orders, Reliable Delivery', image: 'https://images.unsplash.com/photo-1553413077-190dd305871c?auto=format&fit=crop&q=80&w=1200', bg: 'linear-gradient(to right, #312e81 0%, #4338ca 100%)' },
+  { id: 'bh3', title: 'Unbeatable Margins for Partners', image: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&q=80&w=1200', bg: 'linear-gradient(to right, #0f172a 0%, #1e293b 100%)' }
+];
+
 export const PROMOS = [
   { id: 'banner1', title: 'Summer Essentials', subtitle: 'Up to 50% OFF', bg: 'linear-gradient(135deg, #FF9A9E 0%, #FECFEF 99%, #FECFEF 100%)', image: 'https://images.unsplash.com/photo-1550989460-0adf9ea622e2?auto=format&fit=crop&q=80&w=400' },
   { id: 'banner2', title: 'Farm Fresh', subtitle: 'Delivered in 10 mins', bg: 'linear-gradient(120deg, #d4fc79 0%, #96e6a1 100%)', image: 'https://images.unsplash.com/photo-1518843875459-f738682238a6?auto=format&fit=crop&q=80&w=400' },
   { id: 'banner3', title: 'Late Night Cravings', subtitle: 'Snacks & Drinks', bg: 'linear-gradient(to right, #fa709a 0%, #fee140 100%)', image: 'https://images.unsplash.com/photo-1566478989037-eec170784d0b?auto=format&fit=crop&q=80&w=400' },
+];
+
+export const B2B_PROMOS = [
+  { id: 'p1', title: 'Bulk Deals', subtitle: 'Save Up to 40%', bg: 'linear-gradient(135deg, #1e3a8a 0%, #312e81 100%)', image: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&q=80&w=400' },
+  { id: 'p2', title: 'GST Inclusive', subtitle: 'Full Tax Credit', bg: 'linear-gradient(135deg, #1f2937 0%, #111827 100%)', image: 'https://images.unsplash.com/photo-1554224155-1696413565d3?auto=format&fit=crop&q=80&w=400' },
+  { id: 'p3', title: 'Direct Warehouse', subtitle: 'Next Day Delivery', bg: 'linear-gradient(135deg, #4338ca 0%, #3730a3 100%)', image: 'https://images.unsplash.com/photo-1553413077-190dd305871c?auto=format&fit=crop&q=80&w=400' }
 ];
 
 export const STORES = [

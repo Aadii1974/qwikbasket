@@ -15,6 +15,27 @@ export const CartProvider = ({ children }) => {
     }
   });
 
+  const getTieredPrice = (product, quantity) => {
+    if (user?.role !== 'b2b' || !user?.isApproved) return product.b2cNewPrice || 0;
+
+    const basePrice = product.b2bNewPrice || 0;
+    if (!product.b2bTiers) return basePrice;
+
+    try {
+      const tiers = JSON.parse(product.b2bTiers);
+      if (!Array.isArray(tiers) || tiers.length === 0) return basePrice;
+
+      // Find the best tier (highest minQty <= quantity)
+      const sortedTiers = [...tiers].sort((a, b) => b.minQty - a.minQty);
+      const applicableTier = sortedTiers.find(t => quantity >= t.minQty);
+      
+      return applicableTier ? (applicableTier.price || basePrice) : basePrice;
+    } catch (e) {
+      console.error("Error parsing B2B tiers:", e);
+      return basePrice;
+    }
+  };
+
   const addToCart = (product, quantity = 1) => {
     let minQty = 1;
     if (user?.role === 'b2b' && user?.isApproved) {
@@ -24,7 +45,8 @@ export const CartProvider = ({ children }) => {
     setCartItems(prev => {
       const existing = prev.find(item => item.id === product.id);
       if (existing) {
-        return prev.map(item => item.id === product.id ? { ...item, quantity: item.quantity + (quantity >= minQty ? quantity : minQty) } : item);
+        const newQty = existing.quantity + (quantity >= minQty ? quantity : minQty);
+        return prev.map(item => item.id === product.id ? { ...item, quantity: newQty } : item);
       }
       return [...prev, { ...product, quantity: quantity >= minQty ? quantity : minQty }];
     });
@@ -36,13 +58,13 @@ export const CartProvider = ({ children }) => {
 
   const updateQuantity = (id, quantity) => {
     setCartItems(prev => prev.map(item => item.id === id ? { ...item, quantity } : item));
-  }
+  };
 
   const clearCart = () => setCartItems([]);
 
   const subtotal = cartItems.reduce((acc, item) => {
-    const price = (user?.role === 'b2b' && user?.isApproved) ? item.b2bPrice : item.b2cPrice;
-    return acc + (price * item.quantity);
+    const currentPrice = getTieredPrice(item, item.quantity);
+    return acc + (currentPrice * item.quantity);
   }, 0);
 
   const cartCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
@@ -52,7 +74,7 @@ export const CartProvider = ({ children }) => {
   }, [cartItems]);
 
   return (
-    <CartContext.Provider value={{ cartItems, addToCart, removeFromCart, updateQuantity, clearCart, subtotal, cartCount }}>
+    <CartContext.Provider value={{ cartItems, addToCart, removeFromCart, updateQuantity, clearCart, subtotal, cartCount, getTieredPrice }}>
       {children}
     </CartContext.Provider>
   );

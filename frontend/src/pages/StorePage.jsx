@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { PRODUCTS, STORES } from '../services/mockData';
+import { fetchProducts, fetchStores } from '../services/api';
 import ProductCard from '../components/ProductCard';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Lock, Unlock, Store } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 const THEMES = {
   store1: { 
@@ -60,16 +61,42 @@ const THEMES = {
 const StorePage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [isStoreOpen, setIsStoreOpen] = useState(false);
   const [isUnlocked, setIsUnlocked] = useState(false);
+  // Real data state
+  const [storeDetails, setStoreDetails] = useState(null);
+  const [storeProducts, setStoreProducts] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const storeDetails = STORES.find(s => s.id === id) || STORES[0];
   const theme = THEMES[id] || THEMES['store1'];
   
-  // Filter products blindly by doing a rough match or just showing all for demo
-  const storeProducts = PRODUCTS;
 
   useEffect(() => {
+    const loadContent = async () => {
+      try {
+        const [psRaw, ss] = await Promise.all([fetchProducts(), fetchStores()]);
+        const currentStore = ss.find(s => s.id === id);
+        
+        let filteredProds = psRaw || [];
+        if (user?.role === 'b2b') {
+          filteredProds = filteredProds.filter(p => p.customerType === 'BUSINESS' || p.customerType === 'BOTH');
+        } else if (user?.role === 'admin') {
+          // Admin
+        } else {
+          filteredProds = filteredProds.filter(p => p.customerType === 'NORMAL' || p.customerType === 'BOTH');
+        }
+
+        setStoreDetails(currentStore);
+        setStoreProducts(filteredProds.filter(p => p.storeId === id));
+      } catch (err) {
+        console.error("Store loading error:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadContent();
+
     // 1. Trigger the physical unlock mechanism
     const unlockTimer = setTimeout(() => {
        setIsUnlocked(true);
@@ -82,7 +109,10 @@ const StorePage = () => {
     }, 2000);
     
     return () => { clearTimeout(unlockTimer); clearTimeout(openTimer); }
-  }, []);
+  }, [id]);
+
+  if (isLoading) return <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white font-black uppercase tracking-widest animate-pulse">Initializing Store...</div>;
+  if (!storeDetails) return <div className="min-h-screen bg-slate-100 flex flex-col items-center justify-center text-slate-800 p-8 text-center"><h2 className="text-3xl font-black mb-4">Store Not Found</h2><button onClick={() => navigate('/')} className="bg-slate-900 text-white px-8 py-3 rounded-xl font-bold">Back to Home</button></div>;
 
   return (
     <div className={`min-h-screen relative overflow-hidden ${theme.bg}`}>
@@ -209,7 +239,7 @@ const StorePage = () => {
                <button onClick={() => navigate('/#stores')} className="text-white/80 hover:text-white font-bold bg-white/10 px-6 py-3 rounded-xl transition">Back to Main Map</button>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-4 gap-y-8">
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-2 md:gap-4">
                {storeProducts.map((product) => (
                  <motion.div 
                    key={product.id}

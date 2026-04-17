@@ -20,7 +20,7 @@ class AuthService {
     const token = jwt.sign(
       { id: newUser.id, role: newUser.role, isApproved: newUser.isApproved }, 
       process.env.JWT_SECRET, 
-      { expiresIn: '1d' }
+      { expiresIn: '30d' }
     );
 
     return { user: newUser, token };
@@ -36,10 +36,22 @@ class AuthService {
     const token = jwt.sign(
       { id: user.id, role: user.role, isApproved: user.isApproved }, 
       process.env.JWT_SECRET, 
-      { expiresIn: '1d' }
+      { expiresIn: '30d' }
     );
-    
     return { user, token };
+  }
+  static async updateProfile(userId, updateData) {
+    const { name, phone } = updateData;
+    const user = await User.findByPk(userId);
+    if (!user) throw new Error('User not found');
+
+    if (phone && phone !== user.phone) {
+      const existing = await User.findOne({ where: { phone } });
+      if (existing) throw new Error('Phone number already in use');
+    }
+
+    await user.update({ name, phone });
+    return user;
   }
 }
 

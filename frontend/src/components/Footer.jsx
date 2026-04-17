@@ -20,8 +20,8 @@ const Footer = () => {
            </div>
         </div>
         <div className="mt-12 flex flex-col md:flex-row items-center justify-between gap-6 text-[var(--text-muted)] text-sm font-medium">
-           <p>© 2026 Blinkit Unified (B2C & B2B). All Rights Reserved.</p>
-           <div className="flex items-center gap-2">Made with <Heart className="text-red-500 fill-red-500" size={14} /> for modern commerce.</div>
+           <p>© 2026 QwikBasket by Real Farms. All Rights Reserved.</p>
+           <div className="flex items-center gap-2">Built with <Heart className="text-red-500 fill-red-500" size={14} /> for Qwik delivery.</div>
         </div>
       </div>
     </footer>

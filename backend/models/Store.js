@@ -8,6 +8,9 @@ const Store = sequelize.define('Store', {
   image: { type: DataTypes.STRING, allowNull: true },
   rating: { type: DataTypes.DECIMAL(2, 1), defaultValue: 0.0 },
   itemsCount: { type: DataTypes.INTEGER, defaultValue: 0 },
+  // JSON array of section keys to show in this store's page
+  // e.g. ["trending", "latest", "mostPurchased", "flashSale", "categories"]
+  visibleSections: { type: DataTypes.TEXT, allowNull: true, defaultValue: '["trending","latest","mostPurchased"]' },
 }, { timestamps: true });
 
 module.exports = Store;

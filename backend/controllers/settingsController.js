@@ -19,52 +19,43 @@ const getSettings = async (req, res) => {
 
 const updateSettings = async (req, res) => {
   try {
-    const {
-      freeDeliveryThreshold, standardDeliveryFee,
-      smallCartFeeThreshold, smallCartFeeAmount,
-      lowOrderFeeThreshold, lowOrderFeeAmount,
-      packagingFee,
-      qwikDeliveryFee, qwikDeliveryCutoffHour,
-      nightModeStartHour, nightModeEndHour,
-      razorpayKeyId, razorpayKeySecret,
-      storeLatitude, storeLongitude,
-      vegetableMorningSlotStart, vegetableMorningSlotEnd,
-      vegetableEveningSlotStart, vegetableEveningSlotEnd,
-      vegetableSlotsEnabled,
-      agentPayPerKm, agentMinPayPerOrder,
-      agentIncentiveThreshold, agentIncentiveAmount,
-    } = req.body;
-
+    const body = req.body;
     let settings = await Settings.findByPk(1);
     if (!settings) {
       settings = await Settings.create({ id: 1 });
     }
 
+    // Whitelist of all allowed fields
+    const allowed = [
+      'freeDeliveryThreshold', 'standardDeliveryFee',
+      'smallCartFeeThreshold', 'smallCartFeeAmount',
+      'lowOrderFeeThreshold', 'lowOrderFeeAmount',
+      'packagingFee',
+      'qwikDeliveryFee', 'qwikDeliveryCutoffHour',
+      'razorpayKeyId', 'razorpayKeySecret',
+      'storeLatitude', 'storeLongitude',
+      'vegetableMorningSlotStart', 'vegetableMorningSlotEnd',
+      'vegetableEveningSlotStart', 'vegetableEveningSlotEnd',
+      'vegetableSlotsEnabled',
+      'agentPayPerKm', 'agentMinPayPerOrder',
+      'agentIncentiveThreshold', 'agentIncentiveAmount',
+      'farmerCoinEarningPercentage', 'farmerCoinRedemptionRate',
+      // New image fields
+      'heroImages', 'homePromoCards', 'deliverySectionImage',
+      // Launch mode
+      'isLaunchMode', 'launchDate', 'launchMessage', 'launchPopupImage',
+      // Delivery slots config
+      'deliverySlots',
+      // Legacy (kept for backward compat)
+      'homeHeroImage1', 'homeHeroImage2', 'homeHeroImage3',
+    ];
+
     const update = {};
-    if (freeDeliveryThreshold !== undefined) update.freeDeliveryThreshold = freeDeliveryThreshold;
-    if (standardDeliveryFee !== undefined) update.standardDeliveryFee = standardDeliveryFee;
-    if (smallCartFeeThreshold !== undefined) update.smallCartFeeThreshold = smallCartFeeThreshold;
-    if (smallCartFeeAmount !== undefined) update.smallCartFeeAmount = smallCartFeeAmount;
-    if (lowOrderFeeThreshold !== undefined) update.lowOrderFeeThreshold = lowOrderFeeThreshold;
-    if (lowOrderFeeAmount !== undefined) update.lowOrderFeeAmount = lowOrderFeeAmount;
-    if (packagingFee !== undefined) update.packagingFee = packagingFee;
-    if (qwikDeliveryFee !== undefined) update.qwikDeliveryFee = qwikDeliveryFee;
-    if (qwikDeliveryCutoffHour !== undefined) update.qwikDeliveryCutoffHour = qwikDeliveryCutoffHour;
-    if (nightModeStartHour !== undefined) update.nightModeStartHour = nightModeStartHour;
-    if (nightModeEndHour !== undefined) update.nightModeEndHour = nightModeEndHour;
-    if (razorpayKeyId !== undefined) update.razorpayKeyId = razorpayKeyId;
-    if (razorpayKeySecret !== undefined) update.razorpayKeySecret = razorpayKeySecret;
-    if (storeLatitude !== undefined) update.storeLatitude = storeLatitude;
-    if (storeLongitude !== undefined) update.storeLongitude = storeLongitude;
-    if (vegetableMorningSlotStart !== undefined) update.vegetableMorningSlotStart = vegetableMorningSlotStart;
-    if (vegetableMorningSlotEnd !== undefined) update.vegetableMorningSlotEnd = vegetableMorningSlotEnd;
-    if (vegetableEveningSlotStart !== undefined) update.vegetableEveningSlotStart = vegetableEveningSlotStart;
-    if (vegetableEveningSlotEnd !== undefined) update.vegetableEveningSlotEnd = vegetableEveningSlotEnd;
-    if (vegetableSlotsEnabled !== undefined) update.vegetableSlotsEnabled = vegetableSlotsEnabled;
-    if (agentPayPerKm !== undefined) update.agentPayPerKm = agentPayPerKm;
-    if (agentMinPayPerOrder !== undefined) update.agentMinPayPerOrder = agentMinPayPerOrder;
-    if (agentIncentiveThreshold !== undefined) update.agentIncentiveThreshold = agentIncentiveThreshold;
-    if (agentIncentiveAmount !== undefined) update.agentIncentiveAmount = agentIncentiveAmount;
+    allowed.forEach(key => {
+      if (body[key] !== undefined) {
+        update[key] = body[key];
+      }
+    });
 
     await settings.update(update);
     res.status(200).json({ success: true, data: settings });
@@ -72,6 +63,7 @@ const updateSettings = async (req, res) => {
     res.status(400).json({ success: false, error: err.message });
   }
 };
+
 
 /**
  * Tiered flat-fee delivery calculation.

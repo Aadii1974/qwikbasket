@@ -5,7 +5,7 @@ import {
   Trash2, ShoppingBag, Plus, Minus, ChevronRight, Truck, CheckCircle2,
   FileText, Package, PartyPopper, Clock, Zap, Shield, Star,
   MapPin, Phone, User, Tag, Home, Navigation, ArrowRight,
-  Gift, Sparkles, AlertCircle, Info,
+  Gift, Sparkles, AlertCircle, Info, Rocket,
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -82,13 +82,29 @@ const computeFees = (subtotal, deliveryType = 'Smart', settings = {}) => {
   return { isFree, deliveryFee, packagingFee: PKG_FEE, smallCartFee, smallCartReason, qwikSurcharge: 0, total, amountToFree, FREE_THRESHOLD };
 };
 
-/** Smart delivery slot logic based on current time */
-const getSmartSlot = () => {
-  const h = new Date().getHours();
-  if (h < 8)                        return { label: 'Today,  8–10 AM',       when: 'today',    slotKey: 'S1' };
-  if (h >= 8  && h < 12)            return { label: 'Today, 12–2 PM',        when: 'today',    slotKey: 'S2' };
-  if (h >= 12 && h < 16)            return { label: 'Today, 4–6 PM',         when: 'today',    slotKey: 'S3' };
-  return                                    { label: 'Tomorrow,  8–10 AM',   when: 'tomorrow', slotKey: 'S1' };
+/** Generate available delivery slots dynamically */
+const getAvailableSlots = (settings = {}) => {
+  let slots = [];
+  try { slots = JSON.parse(settings.deliverySlots || '[]'); } catch {}
+  if (slots.length === 0) {
+    slots = [
+      { id: 's1', label: '8 AM – 10 AM',  cutoffHour: 7 },
+      { id: 's2', label: '12 PM – 2 PM',  cutoffHour: 11 },
+      { id: 's3', label: '4 PM – 6 PM',   cutoffHour: 15 },
+      { id: 's4', label: '7 PM – 9 PM',   cutoffHour: 18 },
+    ];
+  }
+  const currentHour = new Date().getHours();
+  const availableSlots = [];
+  slots.forEach(s => {
+    if (currentHour < s.cutoffHour) {
+      availableSlots.push({ ...s, display: `Today, ${s.label}` });
+    }
+  });
+  slots.forEach(s => {
+    availableSlots.push({ ...s, display: `Tomorrow, ${s.label}` });
+  });
+  return availableSlots;
 };
 
 const isQwikAvailable = (settings = {}) => {
@@ -237,7 +253,16 @@ const Cart = () => {
 
   // Delivery type state
   const [deliveryType, setDeliveryType] = useState('Smart');
-  const smartSlot = getSmartSlot();
+  const availableSlots = getAvailableSlots(appSettings || {});
+  const [selectedSlot, setSelectedSlot] = useState('');
+  
+  useEffect(() => {
+    if (!selectedSlot && availableSlots.length > 0) {
+      setSelectedSlot(availableSlots[0].display);
+    }
+  }, [availableSlots, selectedSlot]);
+  
+  const isB2BUserPending = user?.role === 'b2b' && !user?.isApproved;
 
   // Quick-add recommendations
   const [recommended, setRecommended] = useState([]);
@@ -403,7 +428,7 @@ const Cart = () => {
   // ── Build delivery slot string ────────────────────────────
   const buildDeliverySlot = () => {
     if (deliveryType === 'Qwik') return 'Qwik Delivery – Within 45–60 mins 🚀';
-    return `Smart Delivery – ${smartSlot.label}`;
+    return `Smart Delivery – ${selectedSlot}`;
   };
 
   // ── Place order ───────────────────────────────────────────
@@ -873,12 +898,18 @@ const Cart = () => {
                                   <span className="ml-auto text-[10px] bg-emerald-100 text-emerald-700 font-black px-2 py-0.5 rounded-full">SCHEDULED</span>
                                 </div>
                                 <div className="bg-white/70 rounded-xl p-3 mt-2 border border-emerald-100">
-                                  <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Your next slot</p>
-                                  <p className="font-black text-slate-900 text-sm flex items-center gap-2">
-                                    <span className="text-emerald-600">📦</span>
-                                    {smartSlot.label}
-                                  </p>
-                                  <p className="text-[11px] text-slate-400 font-medium mt-1">Slots refresh automatically based on ordering time</p>
+                                  <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Select Delivery Slot</p>
+                                  <select
+                                    value={selectedSlot}
+                                    onChange={(e) => setSelectedSlot(e.target.value)}
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="w-full px-3 py-2 border-2 border-emerald-100 rounded-lg font-black text-slate-900 text-sm outline-none focus:border-emerald-400"
+                                  >
+                                    {availableSlots.map(s => (
+                                      <option key={s.display} value={s.display}>{s.display}</option>
+                                    ))}
+                                  </select>
+                                  <p className="text-[11px] text-slate-400 font-medium mt-1">Select your preferred delivery time</p>
                                 </div>
                                 {fees.deliveryFee === 0
                                   ? <p className="text-xs font-black text-emerald-600 mt-2 flex items-center gap-1"><CheckCircle2 size={12} /> Delivery: FREE on your order!</p>
@@ -1094,11 +1125,41 @@ const Cart = () => {
                       )}
                     </div>
 
+                    {/* Launch / Marketing Mode gate */}
+                    {appSettings?.isLaunchMode && (
+                       <div className="mb-6 p-6 bg-gradient-to-br from-orange-50 to-amber-50 border-2 border-orange-200 rounded-[24px] shadow-sm">
+                          <div className="flex items-center gap-3 mb-3">
+                            <div className="w-10 h-10 bg-orange-500 text-white rounded-full flex items-center justify-center shadow-lg shadow-orange-200">
+                              <Rocket size={20} />
+                            </div>
+                            <div>
+                              <p className="font-black text-orange-800 text-base">Wait! We're almost there! 🚀</p>
+                              <p className="text-[10px] font-black text-orange-600 uppercase tracking-widest">Pre-Launch Marketing Phase</p>
+                            </div>
+                          </div>
+                          <p className="text-sm text-slate-700 font-bold leading-relaxed mb-4">{appSettings?.launchMessage || "We are currently setting up our farm-fresh supply chain. Ordering will be enabled very soon!"}</p>
+                          {appSettings?.launchDate && (
+                            <div className="flex items-center gap-2 bg-white/60 p-3 rounded-xl border border-orange-100">
+                              <Clock size={16} className="text-orange-600" />
+                              <p className="text-xs font-black text-orange-800">Orders Opening On: <span className="text-orange-600 ml-1">{new Date(appSettings.launchDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</span></p>
+                            </div>
+                          )}
+                       </div>
+                    )}
+                    
+                    {/* B2B Gate */}
+                    {isB2BUserPending && (
+                       <div className="mb-4 bg-blue-50 border border-blue-200 p-4 rounded-xl">
+                          <p className="font-black text-blue-700 text-sm flex items-center gap-2 mb-1"><Shield size={16} /> Verification Pending</p>
+                          <p className="text-xs text-blue-600 font-medium leading-relaxed">Your business account is being reviewed. You can place orders once approved.</p>
+                       </div>
+                    )}
+
                     {/* CTA */}
                     <motion.button
                       whileTap={{ scale: 0.97 }}
                       onClick={handleCheckout}
-                      disabled={isProcessing}
+                      disabled={isProcessing || appSettings?.isLaunchMode || isB2BUserPending}
                       className={`w-full py-4 rounded-2xl font-black text-white text-base flex items-center justify-center gap-2 shadow-lg transition-all disabled:opacity-60 ${
                         deliveryType === 'Qwik'
                           ? 'bg-gradient-to-r from-amber-500 to-orange-500 shadow-amber-200 hover:from-amber-600 hover:to-orange-600'
@@ -1107,6 +1168,8 @@ const Cart = () => {
                     >
                       {isProcessing ? (
                         <><div className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin" /> Processing...</>
+                      ) : appSettings?.isLaunchMode ? (
+                        <><Rocket size={18} /> Ordering Disabled</>
                       ) : checkoutStep === 1 ? (
                         <><ArrowRight size={18} /> Proceed to Address</>
                       ) : checkoutStep === 2 ? (

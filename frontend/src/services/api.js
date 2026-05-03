@@ -555,3 +555,21 @@ export const deleteBanner = async (id) => {
   return await res.json();
 };
 
+// ── Generic Image Upload (for Media Manager) ─────────────────────────────
+export const uploadImage = async (file) => {
+  const fd = new FormData();
+  fd.append('images', file);
+  let token = '';
+  try {
+    const u = JSON.parse(localStorage.getItem('user') || '{}');
+    token = u?.token || '';
+  } catch {}
+  const res = await fetch(`/api/upload`, {
+    method: 'POST',
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: fd,
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || 'Upload failed');
+  return data.urls?.[0] || data.url;
+};

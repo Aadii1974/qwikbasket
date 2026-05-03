@@ -15,11 +15,11 @@ import ProductPage from './pages/ProductPage';
 import StorePage from './pages/StorePage';
 import SearchPage from './pages/SearchPage';
 import DeliveryDashboard from './pages/DeliveryDashboard';
+import OurStory from './pages/OurStory';
 import GlobalLoader from './components/GlobalLoader';
 import ScrollToTop from './components/ScrollToTop';
 import BottomNav from './components/BottomNav';
-import NightShutter from './components/NightShutter';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Smartphone, X } from 'lucide-react';
 import { fetchSettings } from './services/api';
 
@@ -45,53 +45,18 @@ const AppContent = ({ isInitialLoad, setIsInitialLoad }) => {
     });
   }, []);
 
-  const isNightTime = () => {
-    if (user?.role === 'admin') return false;
-    if (window.location.pathname === '/login') return false;
-    if (window.location.pathname.startsWith('/admin')) return false;
+  // Launch Popup State
+  const [showLaunchPopup, setShowLaunchPopup] = useState(false);
 
-    // If settings haven't loaded, default to 0-0 (always open) to avoid blocking users
-    const start = settings ? Number(settings.nightModeStartHour) || 0 : 0;
-    const end = settings ? Number(settings.nightModeEndHour) || 0 : 0;
-    const h = new Date().getHours();
-    
-    // If start and end are same, it's never night time
-    if (start === end) return false;
-
-    if (start > end) {
-      return h >= start || h < end;
+  useEffect(() => {
+    if (settings?.isLaunchMode && settings?.launchPopupImage) {
+      setShowLaunchPopup(true);
     }
-    return h >= start && h < end;
+  }, [settings]);
+
+  const closeLaunchPopup = () => {
+    setShowLaunchPopup(false);
   };
-
-  // Night shutter state
-  const [showNight, setShowNight]       = useState(false);
-  const [isOpening, setIsOpening]       = useState(false); // morning re-open animation
-  const [shutterDone, setShutterDone]   = useState(false);
-
-  // Check night mode whenever settings change or every 60s
-  useEffect(() => {
-    const check = () => {
-      const night = isNightTime();
-      // Transition: was showing shutter, now it's daytime → play opening animation
-      if (!night && showNight) {
-        setShowNight(false);
-        setIsOpening(true);
-      } else if (night && !showNight) {
-        setShowNight(true);
-        setIsOpening(false);
-      }
-    };
-    check(); // immediate check
-    const interval = setInterval(check, 60_000);
-    return () => clearInterval(interval);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showNight, settings]);
-
-  // Initial mount — if it's night, show shutter straight away
-  useEffect(() => {
-    if (isNightTime()) setShowNight(true);
-  }, [settings, user?.role]);
 
   // PWA Install Prompt State
   const [deferredPrompt, setDeferredPrompt] = useState(null);
@@ -132,19 +97,25 @@ const AppContent = ({ isInitialLoad, setIsInitialLoad }) => {
     <Router>
       <ScrollToTop />
 
-      {/* ── Night Shutter / Morning Opening ── */}
+      {/* ── Launch Popup ── */}
       <AnimatePresence>
-        {showNight && (
-          <NightShutter key="night" isOpening={false} />
-        )}
-      </AnimatePresence>
-      <AnimatePresence>
-        {isOpening && (
-          <NightShutter
-            key="opening"
-            isOpening={true}
-            onOpeningDone={() => { setIsOpening(false); setShutterDone(true); }}
-          />
+        {showLaunchPopup && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="relative max-w-lg w-full bg-transparent rounded-3xl overflow-hidden"
+            >
+              <button 
+                onClick={closeLaunchPopup} 
+                className="absolute top-4 right-4 z-10 w-10 h-10 bg-black/50 hover:bg-black/80 text-white rounded-full flex items-center justify-center transition backdrop-blur-md border border-white/20"
+              >
+                <X size={20} />
+              </button>
+              <img src={settings.launchPopupImage} alt="Launch Details" className="w-full h-auto object-contain rounded-3xl shadow-2xl" />
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
 
@@ -153,7 +124,7 @@ const AppContent = ({ isInitialLoad, setIsInitialLoad }) => {
         {isInitialLoad && <GlobalLoader onFinish={() => setIsInitialLoad(false)} />}
       </AnimatePresence>
 
-      <div className="flex flex-col min-h-screen" data-user-role={user?.role} style={{ display: (showNight || isOpening) ? 'none' : 'flex' }}>
+      <div className="flex flex-col min-h-screen" data-user-role={user?.role}>
         <Header />
 
         {/* Install App Popup */}
@@ -189,6 +160,7 @@ const AppContent = ({ isInitialLoad, setIsInitialLoad }) => {
             <Route path="/categories" element={<CategoriesPage />} />
             <Route path="/product/:id" element={<ProductPage />} />
             <Route path="/delivery" element={<DeliveryDashboard />} />
+            <Route path="/our-story" element={<OurStory />} />
             {/* Fallback route */}
             <Route path="*" element={<Home />} />
           </Routes>

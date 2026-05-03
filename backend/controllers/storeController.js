@@ -15,10 +15,16 @@ const createStore = async (req, res) => {
     if (req.file) {
       data.image = req.file.path;
     }
+    // visibleSections comes as JSON string or array from form
+    if (data.visibleSections && typeof data.visibleSections !== 'string') {
+      data.visibleSections = JSON.stringify(data.visibleSections);
+    }
+    if (!data.visibleSections) {
+      data.visibleSections = JSON.stringify(['trending', 'latest', 'mostPurchased']);
+    }
     const store = await Store.create(data);
     res.status(201).json({ success: true, data: store });
   } catch (err) {
-
     res.status(400).json({ success: false, error: err.message });
   }
 };
@@ -30,9 +36,12 @@ const updateStore = async (req, res) => {
     if (req.file) {
       data.image = req.file.path;
     }
+    // visibleSections comes as JSON string or array from form
+    if (data.visibleSections && typeof data.visibleSections !== 'string') {
+      data.visibleSections = JSON.stringify(data.visibleSections);
+    }
     const [updated] = await Store.update(data, { where: { id } });
     if (updated) {
-
       const updatedStore = await Store.findByPk(id);
       return res.status(200).json({ success: true, data: updatedStore });
     }

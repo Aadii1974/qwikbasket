@@ -11,9 +11,6 @@ const Settings = require('./Settings');
 const PaymentSettlement = require('./PaymentSettlement');
 const Coupon = require('./Coupon');
 const WalletTransaction = require('./WalletTransaction');
-const Banner = require('./Banner');
-
-
 // Define Relationships Here
 Category.hasMany(SubCategory, { foreignKey: 'categoryId', as: 'subcategories', onDelete: 'CASCADE' });
 SubCategory.belongsTo(Category, { foreignKey: 'categoryId', as: 'category' });
@@ -62,7 +59,6 @@ module.exports = {
   Settings,
   PaymentSettlement,
   Coupon,
-  WalletTransaction,
-  Banner
+  WalletTransaction
 };
 

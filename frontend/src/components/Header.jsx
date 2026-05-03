@@ -152,6 +152,12 @@ const Header = () => {
             </div>
           </div>
 
+          <div className="hidden xl:flex items-center gap-6 mr-4">
+            <Link to="/our-story" className="text-xs font-black uppercase tracking-widest text-slate-500 hover:text-[var(--secondary)] transition-colors">
+              Our Story
+            </Link>
+          </div>
+
           <div className="flex-1 max-w-[500px] mx-4 lg:mx-8 hidden lg:flex">
             <form onSubmit={handleSearchSubmit} className="relative w-full group">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[var(--secondary)] transition-colors pointer-events-none">
@@ -176,15 +182,30 @@ const Header = () => {
             {/* Desktop user menu */}
             <div className="hidden lg:block">
               {user ? (
-                <div className="relative py-1" onMouseEnter={() => setShowDropdown(true)} onMouseLeave={() => setShowDropdown(false)}>
+                <div
+                  className="relative py-1"
+                  onMouseEnter={() => setShowDropdown(true)}
+                  onMouseLeave={() => {
+                    // Small delay so moving from trigger to menu doesn't close it
+                    setTimeout(() => setShowDropdown(false), 100);
+                  }}
+                >
                   <button className="flex items-center gap-2 text-sm font-bold text-slate-700 hover:text-[var(--secondary)] transition-colors px-3 py-2 rounded-full hover:bg-slate-50">
                     <div className="w-8 h-8 rounded-full bg-[var(--secondary)]/10 flex items-center justify-center text-[var(--secondary)] flex-shrink-0">
                       <User size={16} strokeWidth={2.5} />
                     </div>
                     <span className="hidden xl:inline max-w-[100px] truncate">{user.name}</span>
                   </button>
+                  {/* Invisible bridge — fills the 6px gap between button bottom and dropdown top */}
                   {showDropdown && (
-                    <div className="absolute top-full right-0 w-60 mt-1.5 p-1 bg-white rounded-2xl shadow-2xl border border-slate-100 z-50 overflow-hidden">
+                    <div className="absolute top-full right-0 w-full h-3 bg-transparent z-40" />
+                  )}
+                  {showDropdown && (
+                    <div
+                      className="absolute top-full right-0 w-60 mt-1.5 p-1 bg-white rounded-2xl shadow-2xl border border-slate-100 z-50 overflow-hidden"
+                      onMouseEnter={() => setShowDropdown(true)}
+                      onMouseLeave={() => setShowDropdown(false)}
+                    >
                       <div className="p-4 rounded-xl bg-slate-50 mb-1">
                         <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Signed in as</p>
                         <p className="font-extrabold text-sm truncate text-slate-900">{user.name}</p>

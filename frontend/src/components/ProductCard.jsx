@@ -156,7 +156,11 @@ const ProductCard = ({ product }) => {
         </h3>
 
         <div className="flex flex-wrap items-center gap-1 mb-2.5">
-          <span className="text-[9px] font-bold px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded-md leading-none uppercase tracking-tighter">{product.unit}</span>
+          {product.ratePerUnit ? (
+            <span className="text-[11px] md:text-[12px] font-black px-2 py-1 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-md leading-none tracking-tight">
+              {product.ratePerUnit}
+            </span>
+          ) : null}
           {product.packagingSize && (
             <span className="text-[9px] font-bold px-1.5 py-0.5 bg-amber-50 text-amber-600 border border-amber-100 rounded-md leading-none uppercase tracking-tighter">{product.packagingSize}</span>
           )}
@@ -215,3 +219,5 @@ const ProductCard = ({ product }) => {
 };
 
 export default ProductCard;
+
+

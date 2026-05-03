@@ -5,6 +5,7 @@ const Product = sequelize.define('Product', {
   id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
   name: { type: DataTypes.STRING, allowNull: false },
   unit: { type: DataTypes.STRING, allowNull: false },
+  ratePerUnit: { type: DataTypes.STRING, allowNull: true }, // e.g., "₹25/kg", "₹5/piece"
   customerType: { type: DataTypes.ENUM('NORMAL', 'BUSINESS', 'BOTH'), defaultValue: 'BOTH' },
   b2cOldPrice: { type: DataTypes.DECIMAL(10, 2), allowNull: true },
   b2cNewPrice: { type: DataTypes.DECIMAL(10, 2), allowNull: true },

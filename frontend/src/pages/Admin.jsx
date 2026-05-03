@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Users, Package, Store as StoreIcon, Zap, Edit, Trash, Plus, Check, LayoutGrid, MapPin, ShoppingBag, ChevronDown, Truck, Clock, BarChart3, TrendingUp, DollarSign, Activity, Tag as TagIcon } from 'lucide-react';
+import { Users, Package, Store as StoreIcon, Zap, Edit, Trash, Plus, Check, LayoutGrid, MapPin, ShoppingBag, ChevronDown, Truck, Clock, BarChart3, TrendingUp, DollarSign, Activity, Tag as TagIcon, Image as ImageIcon, Calendar, Rocket, ToggleLeft, ToggleRight, Upload } from 'lucide-react';
 import { 
   fetchProducts, createProduct, updateProduct, deleteProduct,
   fetchStores, createStore, updateStore, deleteStore,
@@ -10,7 +10,7 @@ import {
   fetchSettings, updateSettings,
   fetchDeliveryAgents, createDeliveryAgent, deleteDeliveryAgent, assignOrderToAgent, fetchSettlementData, processSettlement,
   fetchAllCoupons, createCoupon, updateCoupon, deleteCoupon,
-  fetchAllBannersAdmin, createBanner, updateBanner, deleteBanner
+  uploadImage
 } from '../services/api';
 
 
@@ -33,10 +33,6 @@ const Admin = () => {
   const [coupons, setCoupons] = useState([]);
   const [isCouponModalOpen, setIsCouponModalOpen] = useState(false);
   const [editingCoupon, setEditingCoupon] = useState(null);
-  const [banners, setBanners] = useState([]);
-  const [isBannerModalOpen, setIsBannerModalOpen] = useState(false);
-  const [editingBanner, setEditingBanner] = useState(null);
-
 
   // Loading state
   const [isLoading, setIsLoading] = useState(true);
@@ -92,7 +88,18 @@ const Admin = () => {
     agentIncentiveAmount: 50,
     // Branding
     splashVideoUrl: '',
+    // Home Page Carousel & Promo Cards
+    heroImages: '[]',
+    homePromoCards: '[]',
+    deliverySectionImage: '',
+    // Launch Mode
+    isLaunchMode: false,
+    launchDate: '',
+    launchMessage: 'We are launching soon! Stay tuned.',
+    // Delivery Slots
+    deliverySlots: '[]',
   });
+
 
 
   useEffect(() => {
@@ -115,8 +122,7 @@ const Admin = () => {
         fetchSettings(),
         fetchDeliveryAgents(),
         fetchSettlementData(),
-        fetchAllCoupons(),
-        fetchAllBannersAdmin()
+        fetchAllCoupons()
       ]);
 
       setProducts(prodData || []);
@@ -131,7 +137,6 @@ const Admin = () => {
       setDeliveryAgents(agentData || []);
       setSettlementData(settleData || []);
       setCoupons(couponData || []);
-      setBanners(bannerData || []);
 
     } catch (err) {
       console.error("Failed to load admin data:", err);
@@ -189,6 +194,7 @@ const Admin = () => {
     
     apiData.append('isFlashSale', formData.get('isFlashSale') === 'on');
     apiData.append('packagingSize', formData.get('packagingSize') || '');
+    apiData.append('ratePerUnit', formData.get('ratePerUnit') || '');
     
     if (imageFiles && imageFiles.length > 0) {
       imageFiles.forEach(file => {
@@ -246,6 +252,11 @@ const Admin = () => {
     } else {
       apiData.append('image', formData.get('image') || '');
     }
+
+    // Collect checked sections
+    const sectionOptions = ['trending','latest','mostPurchased','flashSale','categories'];
+    const selectedSections = sectionOptions.filter(s => formData.get(`section_${s}`) === 'on');
+    apiData.append('visibleSections', JSON.stringify(selectedSections.length > 0 ? selectedSections : ['trending','latest','mostPurchased']));
 
     try {
       if (editingStore) {
@@ -441,44 +452,6 @@ const Admin = () => {
     } catch (e) { alert('Error deleting'); }
   };
 
-  
-  const handleSaveBanner = async (e) => {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    const data = {
-      type: formData.get('type'),
-      title: formData.get('title'),
-      subtitle: formData.get('subtitle'),
-      image: formData.get('image'),
-      bg: formData.get('bg'),
-      cta: formData.get('cta'),
-      link: formData.get('link'),
-      isActive: formData.get('isActive') === 'on',
-      order: Number(formData.get('order')) || 0
-    };
-    try {
-      if (editingBanner) {
-        await updateBanner(editingBanner.id, data);
-      } else {
-        await createBanner(data);
-      }
-      alert('Banner saved!');
-      loadInitialData();
-      setIsBannerModalOpen(false);
-    } catch (e) {
-      alert('Error saving banner');
-    }
-  };
-
-  const handleDeleteBanner = async (id) => {
-    if (!window.confirm('Delete banner?')) return;
-    try {
-      await deleteBanner(id);
-      loadInitialData();
-    } catch (e) {
-      alert('Error deleting banner');
-    }
-  };
 
   return (
     <div className="bg-slate-50 min-h-screen pt-12 pb-24">
@@ -502,7 +475,8 @@ const Admin = () => {
                 { id: 'flash', label: 'Flash Sale', icon: <Zap size={20}/> },
                 { id: 'settings', label: 'Global Settings', icon: <Edit size={20}/> },
                 { id: 'coupons', label: 'Coupons Manager', icon: <TagIcon size={20}/> },
-                { id: 'banners', label: 'Banners & Hero', icon: <LayoutGrid size={20}/> }
+                { id: 'media', label: 'Media Manager', icon: <ImageIcon size={20}/> },
+
               ].map((tab) => (
                 <button 
                   key={tab.id} 
@@ -1178,6 +1152,28 @@ const Admin = () => {
                              </div>
                            </div>
 
+                           {/* Delivery Section Image */}
+                           <div className="bg-white p-6 border border-gray-100 rounded-[28px] shadow-sm">
+                             <h3 className="font-black text-slate-800 mb-1 flex items-center gap-2">Delivery Section Image</h3>
+                             <p className="text-xs text-slate-400 font-bold mb-4 uppercase tracking-widest">Image shown on the right side of the Quality & Trust section (below Stores)</p>
+                             <div className="flex gap-3 items-center">
+                               <input
+                                 type="text"
+                                 value={appSettings.deliverySectionImage || ''}
+                                 onChange={e => setAppSettings({...appSettings, deliverySectionImage: e.target.value})}
+                                 className="flex-1 px-4 py-3 border-2 border-slate-100 rounded-xl focus:border-blue-500 outline-none font-bold text-sm bg-slate-50"
+                                 placeholder="https://... or upload via Cloudinary"
+                               />
+                               {appSettings.deliverySectionImage && (
+                                 <div className="w-14 h-10 rounded-xl overflow-hidden border-2 border-slate-200 flex-shrink-0">
+                                   <img src={appSettings.deliverySectionImage} className="w-full h-full object-cover" alt="" />
+                                 </div>
+                               )}
+                             </div>
+                           </div>
+
+
+
 
                           {/* Delivery Fee Section */}
                           <div className="bg-white p-6 border border-gray-100 rounded-[28px] shadow-sm">
@@ -1309,6 +1305,128 @@ const Admin = () => {
                             </div>
                           </div>
 
+                          {/* Ordering Capability */}
+                           <div className="bg-white p-6 border border-gray-100 rounded-[28px] shadow-sm ring-4 ring-orange-50">
+                             <div className="flex items-center justify-between mb-4">
+                               <div>
+                                 <h3 className="font-black text-slate-800 flex items-center gap-2"><Rocket size={18} className="text-orange-500" /> Store Ordering Status</h3>
+                                 <p className="text-xs text-slate-400 font-bold mt-1 uppercase tracking-widest">Enable to start accepting orders. Disable to enter view-only Launch Mode.</p>
+                               </div>
+                               <label className="flex items-center gap-3 cursor-pointer">
+                                  <span className={`text-sm font-black ${!appSettings.isLaunchMode ? 'text-emerald-600' : 'text-slate-400'}`}>
+                                    {(!appSettings.isLaunchMode) ? 'Orders Started' : 'Orders Stopped'}
+                                  </span>
+                                  <div
+                                    onClick={async () => {
+                                      const newMode = !appSettings.isLaunchMode;
+                                      const newSettings = {...appSettings, isLaunchMode: newMode};
+                                      setAppSettings(newSettings);
+                                      await updateSettings(newSettings);
+                                    }}
+                                    className={`w-14 h-7 rounded-full transition-all relative cursor-pointer shadow-inner flex items-center ${
+                                      !appSettings.isLaunchMode ? 'bg-emerald-500' : 'bg-orange-500'
+                                    }`}
+                                  >
+                                    <div className={`w-5 h-5 bg-white rounded-full shadow-md transition-all transform ${
+                                      !appSettings.isLaunchMode ? 'translate-x-8' : 'translate-x-1'
+                                    }`} />
+                                  </div>
+                               </label>
+                             </div>
+                             {appSettings.isLaunchMode && (
+                               <div className="space-y-4 mt-2 border-t border-orange-100 pt-4">
+                                 <div>
+                                   <label className="block text-xs font-black text-slate-500 mb-1 uppercase tracking-widest">Launch Date (Ordering Opens On)</label>
+                                   <input
+                                     type="date"
+                                     value={appSettings.launchDate || ''}
+                                     onChange={e => setAppSettings({...appSettings, launchDate: e.target.value})}
+                                     className="w-full px-4 py-3 border-2 border-slate-100 rounded-xl focus:border-orange-400 outline-none font-bold"
+                                   />
+                                   <p className="text-[10px] text-slate-400 font-bold mt-1">Ordering will automatically open from this date. Leave blank to keep closed indefinitely.</p>
+                                 </div>
+                                 <div className="bg-orange-50 border border-orange-200 rounded-xl p-4">
+                                   <p className="text-xs font-black text-orange-700 flex items-center gap-1"><Rocket size={12} /> Currently in LAUNCH MODE — customers can browse but cannot place orders.</p>
+                                 </div>
+                               </div>
+                             )}
+                           </div>
+
+                           {/* Delivery Slots Manager */}
+                           <div className="bg-white p-6 border border-gray-100 rounded-[28px] shadow-sm">
+                             <h3 className="font-black text-slate-800 mb-1 flex items-center gap-2"><Clock size={18} /> Delivery Slots</h3>
+                             <p className="text-xs text-slate-400 font-bold mb-4 uppercase tracking-widest">Configure delivery time windows. Customers will see available slots when placing orders.</p>
+                             <div className="space-y-3 mb-4">
+                               {(() => {
+                                 let slots = [];
+                                 try { slots = JSON.parse(appSettings.deliverySlots || '[]'); } catch {}
+                                 if (slots.length === 0) slots = [
+                                   { id: 's1', label: '8 AM – 10 AM',  cutoffHour: 7 },
+                                   { id: 's2', label: '12 PM – 2 PM',  cutoffHour: 11 },
+                                   { id: 's3', label: '4 PM – 6 PM',   cutoffHour: 15 },
+                                   { id: 's4', label: '7 PM – 9 PM',   cutoffHour: 18 },
+                                 ];
+                                 return slots.map((slot, idx) => (
+                                   <div key={slot.id || idx} className="flex items-center gap-3 bg-slate-50 rounded-xl p-3 border border-slate-100">
+                                     <Clock size={16} className="text-slate-400 flex-shrink-0" />
+                                     <input
+                                       className="flex-1 bg-transparent font-bold text-sm outline-none"
+                                       value={slot.label}
+                                       onChange={e => {
+                                         let curr = [];
+                                         try { curr = JSON.parse(appSettings.deliverySlots || '[]'); } catch {}
+                                         if (curr.length === 0) curr = slots;
+                                         curr[idx] = { ...curr[idx], label: e.target.value };
+                                         setAppSettings({...appSettings, deliverySlots: JSON.stringify(curr)});
+                                       }}
+                                       placeholder="e.g. 8 AM – 10 AM"
+                                     />
+                                     <div className="flex items-center gap-1">
+                                       <label className="text-[10px] text-slate-400 font-bold">Cutoff Hr:</label>
+                                       <input
+                                         type="number" min="0" max="23"
+                                         className="w-14 text-center bg-white border border-slate-200 rounded-lg py-1 font-bold text-sm outline-none focus:border-[var(--secondary)]"
+                                         value={slot.cutoffHour ?? ''}
+                                         onChange={e => {
+                                           let curr = [];
+                                           try { curr = JSON.parse(appSettings.deliverySlots || '[]'); } catch {}
+                                           if (curr.length === 0) curr = slots;
+                                           curr[idx] = { ...curr[idx], cutoffHour: parseInt(e.target.value) };
+                                           setAppSettings({...appSettings, deliverySlots: JSON.stringify(curr)});
+                                         }}
+                                       />
+                                     </div>
+                                     <button
+                                       type="button"
+                                       onClick={() => {
+                                         let curr = [];
+                                         try { curr = JSON.parse(appSettings.deliverySlots || '[]'); } catch {}
+                                         if (curr.length === 0) curr = slots;
+                                         curr.splice(idx, 1);
+                                         setAppSettings({...appSettings, deliverySlots: JSON.stringify(curr)});
+                                       }}
+                                       className="p-1.5 text-red-400 hover:bg-red-50 rounded-lg transition"
+                                     >
+                                       <Trash size={14} />
+                                     </button>
+                                   </div>
+                                 ));
+                               })()}
+                             </div>
+                             <button
+                               type="button"
+                               onClick={() => {
+                                 let curr = [];
+                                 try { curr = JSON.parse(appSettings.deliverySlots || '[]'); } catch {}
+                                 curr.push({ id: `s${Date.now()}`, label: 'New Slot', cutoffHour: 8 });
+                                 setAppSettings({...appSettings, deliverySlots: JSON.stringify(curr)});
+                               }}
+                               className="flex items-center gap-2 text-sm font-black text-[var(--secondary)] bg-emerald-50 px-4 py-2 rounded-xl hover:bg-emerald-100 transition"
+                             >
+                               <Plus size={16} /> Add Slot
+                             </button>
+                           </div>
+
                           {/* Vegetable Delivery Slots Section */}
                           <div className="bg-white p-6 border border-gray-100 rounded-[28px] shadow-sm">
                             <div className="flex items-center justify-between mb-4">
@@ -1412,45 +1530,197 @@ const Admin = () => {
                      </div>
                   )}
 
-                   {/* BANNERS MANAGER */}
-                   {activeTab === 'banners' && (
-                      <div className="animate-fade-in">
-                         <div className="flex justify-between items-end mb-8">
-                           <div>
-                             <h2 className="text-2xl font-black mb-2 text-slate-900">Banners & Hero Elements</h2>
-                             <p className="text-gray-500 font-medium">Manage home screen carousels and promotional cards.</p>
+                  {/* MEDIA MANAGER */}
+                  {activeTab === 'media' && (
+                     <div className="animate-fade-in space-y-8">
+                        <div>
+                          <h2 className="text-3xl font-black mb-2 text-slate-900 tracking-tight">Media Manager</h2>
+                          <p className="text-gray-500 font-medium">Upload and manage dynamic images across the platform.</p>
+                        </div>
+                        
+                        {/* Launch Popup Image */}
+                        <div className="bg-white p-6 border border-gray-100 rounded-[28px] shadow-sm">
+                           <div className="flex justify-between items-center mb-6">
+                             <div>
+                               <h3 className="font-black text-slate-800 text-lg">Launch Popup Image</h3>
+                               <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-widest">Image shown on website load</p>
+                             </div>
+                             <div className="relative overflow-hidden inline-block">
+                               <button className="bg-[var(--secondary)] text-white px-4 py-2 rounded-xl font-black text-sm flex items-center gap-2">
+                                 <Upload size={16} /> Upload Image
+                               </button>
+                               <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer"
+                                 onChange={async (e) => {
+                                   if (!e.target.files[0]) return;
+                                   try {
+                                      const url = await uploadImage(e.target.files[0]);
+                                      await updateSettings({ ...appSettings, launchPopupImage: url });
+                                      setAppSettings({ ...appSettings, launchPopupImage: url });
+                                      alert("Upload success");
+                                   } catch(err) { alert("Upload failed"); }
+                                 }}
+                               />
+                             </div>
                            </div>
-                           <button onClick={() => { setEditingBanner(null); setIsBannerModalOpen(true); }} className="bg-indigo-600 text-white px-6 py-3 rounded-xl font-black text-sm shadow-lg flex items-center gap-2 hover:bg-indigo-700 transition"><Plus size={18} /> Add Banner</button>
-                         </div>
-                         
-                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {banners.map(b => (
-                              <div key={b.id} className="bg-white border-2 border-slate-100 rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition">
-                                 <div className="h-40 w-full relative">
-                                    <img src={b.image} alt={b.title} className="w-full h-full object-cover" />
-                                    <div className="absolute top-3 right-3 flex gap-1">
-                                       <span className={`text-[9px] uppercase font-black px-2 py-0.5 rounded-full bg-white/90 backdrop-blur ${b.isActive ? 'text-green-600' : 'text-red-600'}`}>
-                                          {b.isActive ? 'Active' : 'Inactive'}
-                                       </span>
-                                       <span className="text-[9px] uppercase font-black px-2 py-0.5 rounded-full bg-slate-900/90 text-white">
-                                          {b.type}
-                                       </span>
-                                    </div>
-                                 </div>
-                                 <div className="p-6">
-                                    <h3 className="font-black text-lg text-slate-900 mb-1 leading-tight">{b.title}</h3>
-                                    <p className="text-xs font-bold text-slate-400 mb-4">{b.subtitle || 'No subtitle'}</p>
-                                    <div className="flex gap-2">
-                                       <button onClick={() => { setEditingBanner(b); setIsBannerModalOpen(true); }} className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-black py-2.5 rounded-xl text-xs uppercase tracking-widest transition">Edit</button>
-                                       <button onClick={() => handleDeleteBanner(b.id)} className="p-2.5 text-red-500 hover:bg-red-50 rounded-xl transition"><Trash size={18}/></button>
-                                    </div>
-                                 </div>
-                              </div>
-                            ))}
-                         </div>
-                      </div>
-                   )}
+                           {appSettings?.launchPopupImage ? (
+                             <div className="relative group w-64 rounded-2xl overflow-hidden border-2 border-slate-100">
+                               <img src={appSettings.launchPopupImage} className="w-full h-auto object-cover" alt="Launch popup" />
+                               <button onClick={async () => {
+                                  if(!window.confirm("Delete image?")) return;
+                                  await updateSettings({ ...appSettings, launchPopupImage: '' });
+                                  setAppSettings({ ...appSettings, launchPopupImage: '' });
+                               }} className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex justify-center items-center text-white transition-opacity">
+                                  <Trash size={24} />
+                               </button>
+                             </div>
+                           ) : (
+                             <div className="w-64 h-40 border-2 border-dashed border-slate-200 rounded-2xl flex items-center justify-center text-slate-400 font-bold uppercase tracking-widest text-xs">
+                               No Image Uploaded
+                             </div>
+                           )}
+                        </div>
 
+                        {/* Delivery Section Image */}
+                        <div className="bg-white p-6 border border-gray-100 rounded-[28px] shadow-sm">
+                           <div className="flex justify-between items-center mb-6">
+                             <div>
+                               <h3 className="font-black text-slate-800 text-lg">Delivery Trust Image</h3>
+                               <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-widest">Image shown in the Delivery Section</p>
+                             </div>
+                             <div className="relative overflow-hidden inline-block">
+                               <button className="bg-[var(--secondary)] text-white px-4 py-2 rounded-xl font-black text-sm flex items-center gap-2">
+                                 <Upload size={16} /> Upload Image
+                               </button>
+                               <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer"
+                                 onChange={async (e) => {
+                                   if (!e.target.files[0]) return;
+                                   try {
+                                      const url = await uploadImage(e.target.files[0]);
+                                      await updateSettings({ ...appSettings, deliverySectionImage: url });
+                                      setAppSettings({ ...appSettings, deliverySectionImage: url });
+                                      alert("Upload success");
+                                   } catch(err) { alert("Upload failed"); }
+                                 }}
+                               />
+                             </div>
+                           </div>
+                           {appSettings?.deliverySectionImage ? (
+                             <div className="relative group w-64 rounded-2xl overflow-hidden border-2 border-slate-100">
+                               <img src={appSettings.deliverySectionImage} className="w-full h-auto object-cover" alt="Delivery section" />
+                               <button onClick={async () => {
+                                  if(!window.confirm("Delete image?")) return;
+                                  await updateSettings({ ...appSettings, deliverySectionImage: '' });
+                                  setAppSettings({ ...appSettings, deliverySectionImage: '' });
+                               }} className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex justify-center items-center text-white transition-opacity">
+                                  <Trash size={24} />
+                               </button>
+                             </div>
+                           ) : (
+                             <div className="w-64 h-40 border-2 border-dashed border-slate-200 rounded-2xl flex items-center justify-center text-slate-400 font-bold uppercase tracking-widest text-xs">
+                               No Image Uploaded
+                             </div>
+                           )}
+                        </div>
+
+                        {/* Hero Carousel Manager */}
+                        <div className="bg-white p-6 border border-gray-100 rounded-[28px] shadow-sm">
+                           <div className="flex justify-between items-center mb-6">
+                             <div>
+                               <h3 className="font-black text-slate-800 text-lg">Hero Carousel Images</h3>
+                               <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-widest">Full-width auto-scrolling banners on Home</p>
+                             </div>
+                             <div className="relative overflow-hidden inline-block">
+                               <button className="bg-[var(--secondary)] text-white px-4 py-2 rounded-xl font-black text-sm flex items-center gap-2">
+                                 <Upload size={16} /> Add Image
+                               </button>
+                               <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer"
+                                 onChange={async (e) => {
+                                   if (!e.target.files[0]) return;
+                                   try {
+                                      const url = await uploadImage(e.target.files[0]);
+                                      let curr = [];
+                                      try { curr = JSON.parse(appSettings.heroImages || '[]'); } catch {}
+                                      curr.push({ id: Date.now().toString(), url });
+                                      await updateSettings({ ...appSettings, heroImages: JSON.stringify(curr) });
+                                      setAppSettings({ ...appSettings, heroImages: JSON.stringify(curr) });
+                                      alert("Upload success");
+                                   } catch(err) { alert("Upload failed"); }
+                                 }}
+                               />
+                             </div>
+                           </div>
+                           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                             {(() => {
+                               let imgs = [];
+                               try { imgs = JSON.parse(appSettings.heroImages || '[]'); } catch {}
+                               return imgs.map((img) => (
+                                 <div key={img.id} className="relative group rounded-2xl overflow-hidden border-2 border-slate-100" style={{aspectRatio: '16/9'}}>
+                                   <img src={img.url} className="w-full h-full object-cover" />
+                                   <button onClick={async () => {
+                                      if(!window.confirm("Delete image?")) return;
+                                      const updated = imgs.filter(i => i.id !== img.id);
+                                      await updateSettings({ ...appSettings, heroImages: JSON.stringify(updated) });
+                                      setAppSettings({ ...appSettings, heroImages: JSON.stringify(updated) });
+                                   }} className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex justify-center items-center text-white transition-opacity">
+                                      <Trash size={24} />
+                                   </button>
+                                 </div>
+                               ));
+                             })()}
+                           </div>
+                        </div>
+
+                        {/* Promo Cards Manager */}
+                        <div className="bg-white p-6 border border-gray-100 rounded-[28px] shadow-sm">
+                           <div className="flex justify-between items-center mb-6">
+                             <div>
+                               <h3 className="font-black text-slate-800 text-lg">Promo Cards (Max 4)</h3>
+                               <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-widest">Small cards shown below Flash Sale</p>
+                             </div>
+                             <div className="relative overflow-hidden inline-block">
+                               <button className="bg-[var(--secondary)] text-white px-4 py-2 rounded-xl font-black text-sm flex items-center gap-2">
+                                 <Upload size={16} /> Add Card
+                               </button>
+                               <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer"
+                                 onChange={async (e) => {
+                                   if (!e.target.files[0]) return;
+                                   let curr = [];
+                                   try { curr = JSON.parse(appSettings.homePromoCards || '[]'); } catch {}
+                                   if (curr.length >= 4) return alert("Maximum 4 cards allowed.");
+                                   try {
+                                      const url = await uploadImage(e.target.files[0]);
+                                      curr.push({ id: Date.now().toString(), url });
+                                      await updateSettings({ ...appSettings, homePromoCards: JSON.stringify(curr) });
+                                      setAppSettings({ ...appSettings, homePromoCards: JSON.stringify(curr) });
+                                      alert("Upload success");
+                                   } catch(err) { alert("Upload failed"); }
+                                 }}
+                               />
+                             </div>
+                           </div>
+                           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                             {(() => {
+                               let cards = [];
+                               try { cards = JSON.parse(appSettings.homePromoCards || '[]'); } catch {}
+                               return cards.map((card) => (
+                                 <div key={card.id} className="relative group rounded-2xl overflow-hidden border-2 border-slate-100" style={{aspectRatio: '3/2'}}>
+                                   <img src={card.url} className="w-full h-full object-cover" />
+                                   <button onClick={async () => {
+                                      if(!window.confirm("Delete card?")) return;
+                                      const updated = cards.filter(i => i.id !== card.id);
+                                      await updateSettings({ ...appSettings, homePromoCards: JSON.stringify(updated) });
+                                      setAppSettings({ ...appSettings, homePromoCards: JSON.stringify(updated) });
+                                   }} className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex justify-center items-center text-white transition-opacity">
+                                      <Trash size={24} />
+                                   </button>
+                                 </div>
+                               ));
+                             })()}
+                           </div>
+                        </div>
+
+                     </div>
+                  )}
                 </>
               )}
            </div>
@@ -1565,7 +1835,234 @@ const Admin = () => {
                             {categories.find(c => c.id === selectedCategoryId).subcategories.map(sub => (
                               <option key={sub.id} value={sub.id}>{sub.name}</option>
                             ))}
-                          </>
+         
+                   {/* MEDIA MANAGER */}
+                   {activeTab === 'media' && (
+                     <div className="animate-fade-in">
+                       <div className="mb-8">
+                         <h2 className="text-2xl font-black mb-2 text-slate-900">Media Manager</h2>
+                         <p className="text-gray-500 font-medium">Upload and manage images for the home page carousel, promotional cards, and delivery section.</p>
+                       </div>
+
+                       <div className="space-y-8">
+                         {/* Hero Carousel */}
+                         <div className="bg-white p-6 border border-gray-100 rounded-[28px] shadow-sm">
+                           <h3 className="font-black text-slate-800 text-lg mb-1 flex items-center gap-2"><ImageIcon size={20} className="text-blue-500" /> Hero Carousel</h3>
+                           <p className="text-xs text-slate-400 font-bold mb-5 uppercase tracking-widest">Full-width auto-scrolling banner at the top of the home page</p>
+
+                           {/* Current slides */}
+                           <div className="space-y-3 mb-5">
+                             {(() => {
+                               let imgs = [];
+                               try { imgs = JSON.parse(appSettings.heroImages || '[]'); } catch {}
+                               if (imgs.length === 0) return (
+                                 <div className="border-2 border-dashed border-slate-200 rounded-xl p-8 text-center text-slate-300">
+                                   <ImageIcon size={32} className="mx-auto mb-2" />
+                                   <p className="text-sm font-black uppercase tracking-widest">No slides uploaded yet</p>
+                                   <p className="text-xs font-medium mt-1">Upload images below to populate the home page carousel</p>
+                                 </div>
+                               );
+                               return imgs.map((img, idx) => (
+                                 <div key={img.id || idx} className="flex items-center gap-4 bg-slate-50 rounded-2xl p-3 border border-slate-100">
+                                   <div className="w-28 h-16 rounded-xl overflow-hidden flex-shrink-0 border border-slate-200 bg-slate-200">
+                                     <img src={img.url} className="w-full h-full object-cover" alt="" />
+                                   </div>
+                                   <div className="flex-1 min-w-0">
+                                     <p className="text-xs font-bold text-slate-800 truncate">{img.url}</p>
+                                     <p className="text-[10px] text-slate-400 mt-0.5">Slide {idx + 1}</p>
+                                   </div>
+                                   <button
+                                     type="button"
+                                     onClick={async () => {
+                                       let curr = [];
+                                       try { curr = JSON.parse(appSettings.heroImages || '[]'); } catch {}
+                                       const updated = curr.filter((_, i) => i !== idx);
+                                       const newSettings = {...appSettings, heroImages: JSON.stringify(updated)};
+                                       setAppSettings(newSettings);
+                                       await updateSettings(newSettings);
+                                     }}
+                                     className="flex-shrink-0 p-2 text-red-500 hover:bg-red-50 rounded-xl transition"
+                                   >
+                                     <Trash size={16} />
+                                   </button>
+                                 </div>
+                               ));
+                             })()}
+                           </div>
+
+                           {/* Upload */}
+                           <label className="flex items-center justify-center gap-3 w-full py-4 border-2 border-dashed border-blue-300 bg-blue-50 rounded-2xl cursor-pointer hover:bg-blue-100 transition font-black text-blue-700 text-sm">
+                             <ImageIcon size={18} />
+                             <span>Click to Upload New Slide</span>
+                             <input
+                               type="file"
+                               accept="image/*"
+                               className="hidden"
+                               onChange={async (e) => {
+                                 const file = e.target.files?.[0];
+                                 if (!file) return;
+                                 try {
+                                   const url = await uploadImage(file);
+                                   let curr = [];
+                                   try { curr = JSON.parse(appSettings.heroImages || '[]'); } catch {}
+                                   const newItem = { id: Date.now().toString(), url };
+                                   const newSettings = {...appSettings, heroImages: JSON.stringify([...curr, newItem])};
+                                   setAppSettings(newSettings);
+                                   await updateSettings(newSettings);
+                                   e.target.value = '';
+                                   alert('✅ Slide uploaded and saved!');
+                                 } catch(err) {
+                                   alert('Upload failed: ' + err.message);
+                                 }
+                               }}
+                             />
+                           </label>
+                         </div>
+
+                         {/* Promo Cards */}
+                         <div className="bg-white p-6 border border-gray-100 rounded-[28px] shadow-sm">
+                           <h3 className="font-black text-slate-800 text-lg mb-1 flex items-center gap-2"><ImageIcon size={20} className="text-purple-500" /> Promo Cards (below Flash Sale)</h3>
+                           <p className="text-xs text-slate-400 font-bold mb-5 uppercase tracking-widest">4 promotional image cards shown inside the Flash Sale section</p>
+
+                           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
+                             {(() => {
+                               let cards = [];
+                               try { cards = JSON.parse(appSettings.homePromoCards || '[]'); } catch {}
+                               const slots = [...cards];
+                               while (slots.length < 4) slots.push(null);
+                               return slots.slice(0, 4).map((card, idx) => (
+                                 <div key={card?.id || `slot-${idx}`}>
+                                   {card ? (
+                                     <div className="relative rounded-2xl overflow-hidden border-2 border-slate-200 group" style={{ aspectRatio: '3/2' }}>
+                                       <img src={card.url} className="w-full h-full object-cover" alt="" />
+                                       <button
+                                         type="button"
+                                         onClick={async () => {
+                                           let curr = [];
+                                           try { curr = JSON.parse(appSettings.homePromoCards || '[]'); } catch {}
+                                           const updated = curr.filter(c => c.id !== card.id);
+                                           const newSettings = {...appSettings, homePromoCards: JSON.stringify(updated)};
+                                           setAppSettings(newSettings);
+                                           await updateSettings(newSettings);
+                                         }}
+                                         className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition flex items-center justify-center"
+                                       >
+                                         <Trash size={20} className="text-white" />
+                                       </button>
+                                       <span className="absolute bottom-1 left-1 bg-black/50 text-white text-[9px] font-black px-1.5 py-0.5 rounded">Card {idx+1}</span>
+                                     </div>
+                                   ) : (
+                                     <label className="flex flex-col items-center justify-center gap-1 w-full border-2 border-dashed border-purple-200 bg-purple-50/60 rounded-2xl cursor-pointer hover:bg-purple-100 transition text-purple-400" style={{ aspectRatio: '3/2' }}>
+                                       <Plus size={22} />
+                                       <span className="text-[10px] font-black uppercase">Card {idx+1}</span>
+                                       <input
+                                         type="file"
+                                         accept="image/*"
+                                         className="hidden"
+                                         onChange={async (e) => {
+                                           const file = e.target.files?.[0];
+                                           if (!file) return;
+                                           try {
+                                             const url = await uploadImage(file);
+                                             let curr = [];
+                                             try { curr = JSON.parse(appSettings.homePromoCards || '[]'); } catch {}
+                                             const newItem = { id: Date.now().toString(), url };
+                                             const newSettings = {...appSettings, homePromoCards: JSON.stringify([...curr, newItem])};
+                                             setAppSettings(newSettings);
+                                             await updateSettings(newSettings);
+                                             e.target.value = '';
+                                           } catch(err) {
+                                             alert('Upload failed: ' + err.message);
+                                           }
+                                         }}
+                                       />
+                                     </label>
+                                   )}
+                                 </div>
+                               ));
+                             })()}
+                           </div>
+                           <p className="text-[11px] text-slate-400 font-bold">Click the + slot to upload. Hover image to delete. Saves automatically.</p>
+                         </div>
+
+                         {/* Delivery Section Image */}
+                         <div className="bg-white p-6 border border-gray-100 rounded-[28px] shadow-sm">
+                           <h3 className="font-black text-slate-800 text-lg mb-1 flex items-center gap-2"><Truck size={20} className="text-emerald-500" /> Delivery Trust Section Image</h3>
+                           <p className="text-xs text-slate-400 font-bold mb-5 uppercase tracking-widest">Image shown on the right side of the Quality & Trust section</p>
+                           <div className="flex gap-4 items-start">
+                             <div className="flex-1">
+                               <label className="flex items-center justify-center gap-3 w-full py-4 border-2 border-dashed border-emerald-300 bg-emerald-50 rounded-2xl cursor-pointer hover:bg-emerald-100 transition font-black text-emerald-700 text-sm mb-3">
+                                 <ImageIcon size={18} />
+                                 <span>Upload Delivery Image</span>
+                                 <input
+                                   type="file"
+                                   accept="image/*"
+                                   className="hidden"
+                                   onChange={async (e) => {
+                                     const file = e.target.files?.[0];
+                                     if (!file) return;
+                                     try {
+                                       const url = await uploadImage(file);
+                                       const newSettings = {...appSettings, deliverySectionImage: url};
+                                       setAppSettings(newSettings);
+                                       await updateSettings(newSettings);
+                                       alert('✅ Delivery section image uploaded!');
+                                       e.target.value = '';
+                                     } catch(err) {
+                                       alert('Upload failed: ' + err.message);
+                                     }
+                                   }}
+                                 />
+                               </label>
+                               <p className="text-xs text-slate-400">Or paste a URL directly:</p>
+                               <input
+                                 type="text"
+                                 value={appSettings.deliverySectionImage || ''}
+                                 onChange={e => setAppSettings({...appSettings, deliverySectionImage: e.target.value})}
+                                 className="w-full mt-1 px-4 py-3 border-2 border-slate-100 rounded-xl focus:border-emerald-400 outline-none font-bold text-sm"
+                                 placeholder="https://..."
+                               />
+                             </div>
+                             {appSettings.deliverySectionImage && (
+                               <div className="w-32 h-24 rounded-xl overflow-hidden border-2 border-slate-200 flex-shrink-0">
+                                 <img src={appSettings.deliverySectionImage} className="w-full h-full object-cover" alt="" />
+                               </div>
+                             )}
+                           </div>
+                           {appSettings.deliverySectionImage && (
+                             <button
+                               type="button"
+                               onClick={async () => {
+                                 const newSettings = {...appSettings, deliverySectionImage: ''};
+                                 setAppSettings(newSettings);
+                                 await updateSettings(newSettings);
+                               }}
+                               className="mt-3 text-xs text-red-500 font-black hover:underline"
+                             >
+                               Remove image
+                             </button>
+                           )}
+                         </div>
+
+                         {/* Save all */}
+                         <button
+                           onClick={async () => {
+                             try {
+                               await updateSettings(appSettings);
+                               alert('✅ Media settings saved!');
+                             } catch(e) {
+                               alert('Failed: ' + e.message);
+                             }
+                           }}
+                           className="w-full bg-[var(--secondary)] text-white py-4 rounded-2xl font-black shadow-lg hover:opacity-90 transition"
+                         >
+                           Save All Media Settings
+                         </button>
+                       </div>
+                     </div>
+                   )}
+
+                 </>
                         ) : <option value="">No</option>
                       ) : <option value="">First select category</option>}
                     </select>
@@ -1589,6 +2086,12 @@ const Admin = () => {
                     <label className="block text-sm font-black text-slate-700 mb-2 uppercase tracking-wide">Packaging Size</label>
                     <input name="packagingSize" defaultValue={editingProduct?.packagingSize} className="w-full px-5 py-4 border-2 border-slate-100 rounded-xl focus:border-[var(--secondary)] outline-none font-bold text-slate-900" placeholder="e.g. Pack of 24" />
                   </div>
+               </div>
+
+               <div>
+                 <label className="block text-sm font-black text-slate-700 mb-2 uppercase tracking-wide">Rate / Unit <span className="text-emerald-600">(Shown prominently on product cards)</span></label>
+                 <input name="ratePerUnit" defaultValue={editingProduct?.ratePerUnit} className="w-full px-5 py-4 border-2 border-emerald-100 rounded-xl focus:border-emerald-500 outline-none font-bold text-slate-900 bg-emerald-50" placeholder="e.g. Rs25/kg, Rs5/piece, Rs120/litre" />
+                 <p className="text-[10px] text-slate-400 mt-1.5 font-bold">Shown big and bold on product cards to attract customers quickly. Unit is retained in the database but not displayed on cards.</p>
                </div>
 
                {(customerType === 'BOTH' || customerType === 'NORMAL') && (
@@ -1730,7 +2233,7 @@ const Admin = () => {
       {/* Store Modal */}
       {isStoreModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <form onSubmit={handleSaveStore} className="bg-white rounded-3xl max-w-lg w-full shadow-2xl animate-fade-up">
+          <form onSubmit={handleSaveStore} className="bg-white rounded-3xl max-w-lg w-full shadow-2xl animate-fade-up max-h-[90vh] overflow-y-auto">
             <div className="p-8 border-b flex justify-between items-center bg-slate-900 text-white rounded-t-3xl">
                <h2 className="text-2xl font-black">{editingStore ? 'Edit Store' : 'Create Speciality Store'}</h2>
                <button type="button" onClick={() => setIsStoreModalOpen(false)} className="text-white/60 hover:text-white bg-white/10 p-2 rounded-full">X</button>
@@ -1761,6 +2264,38 @@ const Admin = () => {
                        <input name="image" defaultValue={editingStore?.image || ''} className="flex-[2] px-4 py-2 bg-slate-50 border-2 border-slate-100 rounded-xl focus:border-[var(--secondary)] outline-none font-bold text-xs" placeholder="Or URL..." />
                     </div>
                   </div>
+               </div>
+
+               {/* Sections to show inside this store */}
+               <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100">
+                 <label className="block text-sm font-black text-slate-700 mb-3 uppercase tracking-wide">Sections to Show in Store Page</label>
+                 <p className="text-[10px] text-slate-400 font-bold mb-4">Select which product sections appear when customers visit this store.</p>
+                 {(() => {
+                   let currentSections = [];
+                   try { currentSections = editingStore?.visibleSections ? JSON.parse(editingStore.visibleSections) : ['trending','latest','mostPurchased']; } catch { currentSections = ['trending','latest','mostPurchased']; }
+                   const allSections = [
+                     { key: 'trending', label: '🔥 Trending Products' },
+                     { key: 'latest', label: '✨ Just Arrived (Latest)' },
+                     { key: 'mostPurchased', label: '⭐ Most Purchased' },
+                     { key: 'flashSale', label: '⚡ Flash Sale Items' },
+                     { key: 'categories', label: '🗂️ Category Browsing' },
+                   ];
+                   return (
+                     <div className="space-y-2">
+                       {allSections.map(sec => (
+                         <label key={sec.key} className="flex items-center gap-3 p-3 bg-white rounded-xl border border-slate-100 cursor-pointer hover:border-[var(--secondary)] transition-colors">
+                           <input
+                             type="checkbox"
+                             name={`section_${sec.key}`}
+                             defaultChecked={currentSections.includes(sec.key)}
+                             className="w-4 h-4 accent-[var(--secondary)]"
+                           />
+                           <span className="font-bold text-sm text-slate-700">{sec.label}</span>
+                         </label>
+                       ))}
+                     </div>
+                   );
+                 })()}
                </div>
             </div>
             <div className="p-8 bg-slate-50 border-t rounded-b-3xl flex justify-end gap-4">
@@ -1903,76 +2438,7 @@ const Admin = () => {
       {/* FOOTER PUSH */}
       <div className="h-20"></div>
 
-      {/* Banner Modal */}
-      {isBannerModalOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
-          <form onSubmit={handleSaveBanner} className="bg-white rounded-[32px] max-w-lg w-full shadow-2xl animate-fade-up overflow-hidden">
-            <div className="p-8 border-b bg-indigo-900 text-white">
-               <h2 className="text-2xl font-black">{editingBanner ? 'Edit Banner' : 'New Banner & Hero'}</h2>
-               <p className="text-xs font-bold opacity-60 mt-1 uppercase tracking-widest">Global UI Configuration</p>
-            </div>
-            <div className="p-8 space-y-4 max-h-[60vh] overflow-y-auto custom-scrollbar">
-               <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-black text-slate-400 mb-2 uppercase tracking-wide">Banner Type</label>
-                    <select name="type" defaultValue={editingBanner?.type || 'HERO'} className="w-full px-5 py-3 border-2 border-slate-100 rounded-xl font-bold bg-white text-slate-900 outline-none focus:border-indigo-500">
-                       <option value="HERO">Main Hero (B2C)</option>
-                       <option value="PROMO">Promo Card (B2C)</option>
-                       <option value="B2B_HERO">Main Hero (B2B)</option>
-                       <option value="B2B_PROMO">Promo Card (B2B)</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-black text-slate-400 mb-2 uppercase tracking-wide">Order (Priority)</label>
-                    <input type="number" name="order" defaultValue={editingBanner?.order || 0} className="w-full px-5 py-3 border-2 border-slate-100 rounded-xl font-bold outline-none focus:border-indigo-500" />
-                  </div>
-               </div>
 
-               <div>
-                 <label className="block text-xs font-black text-slate-400 mb-2 uppercase tracking-wide">Title / Heading</label>
-                 <input required name="title" defaultValue={editingBanner?.title} className="w-full px-5 py-3 border-2 border-slate-100 rounded-xl font-bold outline-none focus:border-indigo-500" placeholder="e.g. Fresh Groceries in 10 Mins" />
-               </div>
-
-               <div>
-                 <label className="block text-xs font-black text-slate-400 mb-2 uppercase tracking-wide">Subtitle / Text</label>
-                 <input name="subtitle" defaultValue={editingBanner?.subtitle} className="w-full px-5 py-3 border-2 border-slate-100 rounded-xl font-bold outline-none focus:border-indigo-500" placeholder="e.g. Up to 40% OFF" />
-               </div>
-
-               <div>
-                 <label className="block text-xs font-black text-slate-400 mb-2 uppercase tracking-wide">Image URL</label>
-                 <input required name="image" defaultValue={editingBanner?.image} className="w-full px-5 py-3 border-2 border-slate-100 rounded-xl font-bold outline-none focus:border-indigo-500" placeholder="https://..." />
-               </div>
-
-               <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-black text-slate-400 mb-2 uppercase tracking-wide">Background (CSS)</label>
-                    <input name="bg" defaultValue={editingBanner?.bg || 'linear-gradient(135deg, #FF9A9E 0%, #FECFEF 100%)'} className="w-full px-5 py-3 border-2 border-slate-100 rounded-xl font-bold outline-none focus:border-indigo-500" placeholder="linear-gradient..." />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-black text-slate-400 mb-2 uppercase tracking-wide">CTA Text (Hero Only)</label>
-                    <input name="cta" defaultValue={editingBanner?.cta} className="w-full px-5 py-3 border-2 border-slate-100 rounded-xl font-bold outline-none focus:border-indigo-500" placeholder="Shop Now" />
-                  </div>
-               </div>
-
-               <div>
-                 <label className="block text-xs font-black text-slate-400 mb-2 uppercase tracking-wide">Redirect Link</label>
-                 <input name="link" defaultValue={editingBanner?.link || '/'} className="w-full px-5 py-3 border-2 border-slate-100 rounded-xl font-bold outline-none focus:border-indigo-500" placeholder="/category/dairy" />
-               </div>
-
-               <div className="flex items-center gap-3 pt-2">
-                  <input type="checkbox" name="isActive" id="isBannerActive" defaultChecked={editingBanner?.isActive !== false} className="w-5 h-5 accent-indigo-600" />
-                  <label htmlFor="isBannerActive" className="font-black text-slate-700 cursor-pointer">Active and Visible</label>
-               </div>
-            </div>
-            <div className="p-8 bg-slate-50 border-t flex justify-end gap-4">
-               <button type="button" onClick={() => setIsBannerModalOpen(false)} className="font-bold text-slate-500 hover:text-slate-700 transition">Cancel</button>
-               <button type="submit" className="bg-indigo-900 text-white px-8 py-3 rounded-xl font-black shadow-lg hover:bg-indigo-950 transition">
-                 {editingBanner ? 'Update Banner' : 'Create Banner'}
-               </button>
-            </div>
-          </form>
-        </div>
-      )}
     </div>
   );
 }

@@ -33,6 +33,33 @@ const createOrder = async (req, res) => {
       return res.status(400).json({ success: false, error: 'Delivery address is required' });
     }
 
+    // ── Launch Mode Gate ────────────────────────────────
+    const settingsCheck = await Settings.findByPk(1, { transaction: t });
+    if (settingsCheck?.isLaunchMode) {
+      const launchDate = settingsCheck.launchDate;
+      const today = new Date().toISOString().split('T')[0];
+      if (!launchDate || today < launchDate) {
+        await t.rollback();
+        return res.status(403).json({
+          success: false,
+          error: settingsCheck.launchMessage || 'Ordering is not open yet. We are launching soon!',
+          launchDate,
+          isLaunchMode: true,
+        });
+      }
+    }
+
+    // ── B2B Verification Gate ────────────────────────────
+    const orderingUser = await User.findByPk(req.user.id, { transaction: t });
+    if (orderingUser?.role === 'b2b' && !orderingUser?.isApproved) {
+      await t.rollback();
+      return res.status(403).json({
+        success: false,
+        error: 'Your business account is pending verification. You will be able to place orders once approved by our team.',
+        b2bPending: true,
+      });
+    }
+
     const user = await User.findByPk(req.user.id, { transaction: t, lock: true });
     
     if (coinsRedeemed > 0 && user.farmerCoins < coinsRedeemed) {

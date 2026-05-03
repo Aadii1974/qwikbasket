@@ -13,7 +13,7 @@ const orderRoutes    = require('./routes/orderRoutes');
 const settingsRoutes = require('./routes/settingsRoutes');
 const deliveryRoutes = require('./routes/deliveryRoutes');
 const couponRoutes   = require('./routes/couponRoutes');
-const bannerRoutes   = require('./routes/bannerRoutes');
+const uploadRoutes   = require('./routes/uploadRoutes');
 
 
 const app = express();
@@ -34,7 +34,7 @@ app.use('/api/orders',     orderRoutes);
 app.use('/api/settings',   settingsRoutes);
 app.use('/api/delivery',   deliveryRoutes);
 app.use('/api/coupons',    couponRoutes);
-app.use('/api/banners',    bannerRoutes);
+app.use('/api/upload',     uploadRoutes);
 
 
 
@@ -62,14 +62,6 @@ const startServer = async () => {
 
     // Prevent 'Too many keys specified' by disabling alter: true 
     await sequelize.sync();
-    try {
-      const seedBanners = require('./seedBanners');
-      await seedBanners();
-    } catch (e) {
-      console.warn('Banner seeding skipped/failed');
-    }
-
-
     app.listen(PORT, () => {
       console.log(`✅ QwikBasket API running at http://localhost:${PORT}`);
     });

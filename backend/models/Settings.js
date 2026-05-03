@@ -46,15 +46,6 @@ const Settings = sequelize.define('Settings', {
     type: DataTypes.INTEGER,
     defaultValue: 20, // Qwik delivery available until 8 PM (hour 20)
   },
-  // ── Night Mode ───────────────────────────────────────────
-  nightModeStartHour: {
-    type: DataTypes.INTEGER,
-    defaultValue: 0, // Show shutter from midnight (hour 0)
-  },
-  nightModeEndHour: {
-    type: DataTypes.INTEGER,
-    defaultValue: 6, // Reopen at 6 AM (hour 6)
-  },
   // ── Store Location (legacy — kept for reference) ─────────
   storeLatitude: {
     type: DataTypes.FLOAT,
@@ -126,10 +117,55 @@ const Settings = sequelize.define('Settings', {
     type: DataTypes.FLOAT,
     defaultValue: 1, // 1 coin = ₹1
   },
-  // ── Branding ─────────────────────────────────────────────
-  splashVideoUrl: {
+  // ── Home Page Image Carousel ─────────────────────────────
+  // Admin uploads images that auto-scroll as full-width carousel on home page
+  // Stored as JSON: [{id, url}, ...]
+  heroImages: {
+    type: DataTypes.TEXT,
+    defaultValue: '[]',
+  },
+  // ── Home Promo Cards (below Flash Sale) ──────────────────
+  // Admin-managed small promotional image cards
+  // Stored as JSON: [{id, url}, ...]
+  homePromoCards: {
+    type: DataTypes.TEXT,
+    defaultValue: '[]',
+  },
+  // ── Delivery/Trust Section Image ─────────────────────────
+  deliverySectionImage: {
+    type: DataTypes.STRING(1000),
+    defaultValue: '', // Admin uploads image shown on right of delivery trust section
+  },
+  // ── Launch / Marketing Mode ───────────────────────────
+  // When isLaunchMode=true, users can browse but NOT order
+  // Ordering unlocks on launchDate (ISO date string, e.g. '2026-05-15')
+  isLaunchMode: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+  },
+  launchDate: {
     type: DataTypes.STRING,
-    defaultValue: '', // User will set this from Admin
+    defaultValue: '',  // e.g. '2026-05-15'
+  },
+  launchMessage: {
+    type: DataTypes.STRING(500),
+    defaultValue: 'We are launching soon! Stay tuned.',
+  },
+  launchPopupImage: {
+    type: DataTypes.STRING(1000),
+    defaultValue: '',
+  },
+  // ── Delivery Slots Configuration ──────────────────────
+  // JSON array of slot objects: [{id, label, startHour, endHour, cutoffHour}, ...]
+  // cutoffHour = last hour you can ORDER for this slot today
+  deliverySlots: {
+    type: DataTypes.TEXT,
+    defaultValue: JSON.stringify([
+      { id: 's1', label: '8 AM – 10 AM',  startHour: 8,  endHour: 10, cutoffHour: 7  },
+      { id: 's2', label: '12 PM – 2 PM',  startHour: 12, endHour: 14, cutoffHour: 11 },
+      { id: 's3', label: '4 PM – 6 PM',   startHour: 16, endHour: 18, cutoffHour: 15 },
+      { id: 's4', label: '7 PM – 9 PM',   startHour: 19, endHour: 21, cutoffHour: 18 },
+    ]),
   },
 
 }, {

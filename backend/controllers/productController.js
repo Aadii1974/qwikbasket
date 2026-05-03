@@ -30,6 +30,12 @@ const sanitizeData = (data) => {
     }
   });
 
+  if (data.isFlashSale === 'true') data.isFlashSale = true;
+  else if (data.isFlashSale === 'false') data.isFlashSale = false;
+
+  // ratePerUnit is a plain string — clean empty to null
+  if (data.ratePerUnit === "" || data.ratePerUnit === undefined) data.ratePerUnit = null;
+
   return data;
 };
 

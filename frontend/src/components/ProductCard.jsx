@@ -3,11 +3,13 @@ import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { Plus, Minus, Check, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 
 const LOW_STOCK_THRESHOLD = 10;
 
 const ProductCard = ({ product }) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { cartItems, addToCart, updateQuantity, removeFromCart, getTieredPrice } = useCart();
   const [isAdding, setIsAdding] = useState(false);
   const [activeImage, setActiveImage] = useState(0);
@@ -79,11 +81,10 @@ const ProductCard = ({ product }) => {
 
   return (
     <div
-      onClick={() => !isOutOfStock && window.location.assign(`/product/${product.id}`)}
-      className={`card-premium group relative flex flex-col w-full overflow-hidden select-none
+      onClick={() => !isOutOfStock && navigate(`/product/${product.id}`)}
+      className={`card-premium group relative flex flex-col w-full h-full overflow-hidden select-none
         ${showWholesaleTheme ? 'border-red-100' : ''}
         ${isOutOfStock ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}`}
-      style={{ minHeight: '200px' }}
     >
       {/* ── Image Area ─────────────────────────────── */}
       <div className={`relative w-full flex items-center justify-center rounded-t-[18px] overflow-hidden

@@ -121,8 +121,8 @@ const Header = () => {
         <div className="max-w-[1440px] mx-auto px-4 md:px-6 lg:px-10 flex items-center justify-between gap-3">
           
           <div className="flex items-center gap-2 md:gap-6 flex-shrink-0">
-            <Link to="/" className="flex items-center gap-1.5 group">
-              <span className="text-[22px] md:text-[28px] font-[900] tracking-tighter" style={{ color: 'var(--secondary)' }}>
+            <Link to="/" className="flex items-center gap-1.5 group min-w-0 flex-shrink-0">
+              <span className="text-[20px] md:text-[28px] font-[900] tracking-tighter truncate" style={{ color: 'var(--secondary)' }}>
                 Qwik<span className="text-slate-800">Basket</span>
               </span>
               <span className="bg-amber-100 text-amber-700 text-[8px] px-1.5 py-0.5 rounded-full font-[900] uppercase tracking-wider hidden md:block shadow-sm border border-amber-200">

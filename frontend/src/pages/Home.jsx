@@ -54,73 +54,80 @@ const HeroCarousel = ({ images }) => {
   // Placeholder when no images are uploaded
   if (!images || images.length === 0) {
     return (
-      <section className="w-full mb-6 md:mb-10">
-        <div
-          className="w-full bg-slate-100 border-2 border-dashed border-slate-200 flex flex-col items-center justify-center"
-          style={{ height: 'clamp(200px, 45vw, 560px)' }}
-        >
-          <div className="flex flex-col items-center gap-3 text-slate-300 text-center px-6">
-            <div className="w-20 h-20 rounded-3xl bg-slate-200 flex items-center justify-center">
-              <ImageIcon size={36} className="text-slate-300" />
+      <section className="w-full mt-6 mb-6 md:mb-10">
+        <div className="max-w-[1440px] mx-auto px-4 lg:px-10">
+          <div
+            className="w-full bg-slate-50 border-2 border-dashed border-slate-200 flex flex-col items-center justify-center rounded-[32px] overflow-hidden"
+            style={{ height: 'clamp(250px, 35vw, 500px)' }}
+          >
+            <div className="flex flex-col items-center gap-3 text-slate-300 text-center px-6">
+              <div className="w-20 h-20 rounded-3xl bg-slate-200 flex items-center justify-center">
+                <ImageIcon size={36} className="text-slate-300" />
+              </div>
+              <p className="text-sm font-black uppercase tracking-widest">Hero Carousel</p>
+              <p className="text-xs font-medium">Upload images from Admin Panel → Global Settings → Hero Carousel</p>
             </div>
-            <p className="text-sm font-black uppercase tracking-widest">Hero Carousel</p>
-            <p className="text-xs font-medium">Upload images from Admin Panel → Global Settings → Hero Carousel</p>
           </div>
         </div>
       </section>
     );
   }
 
+
   return (
-    <section className="w-full mb-6 md:mb-10 relative overflow-hidden" style={{ height: 'clamp(200px, 45vw, 560px)' }}>
-      {/* Slides */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={current}
-          initial={{ opacity: 0, x: 60 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -60 }}
-          transition={{ duration: 0.5, ease: 'easeInOut' }}
-          className="absolute inset-0"
-        >
-          <img
-            src={images[current].url}
-            alt={`Hero banner ${current + 1}`}
-            className="w-full h-full object-cover"
-          />
-        </motion.div>
-      </AnimatePresence>
+    <section className="w-full mt-6 mb-6 md:mb-10 relative overflow-hidden">
+      <div className="max-w-[1440px] mx-auto px-4 lg:px-10">
+        <div className="relative w-full rounded-[32px] overflow-hidden bg-slate-50 border border-slate-100 shadow-sm" style={{ height: 'clamp(240px, 35vw, 480px)' }}>
+          {/* Slides */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={current}
+              initial={{ opacity: 0, x: 60 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -60 }}
+              transition={{ duration: 0.5, ease: 'easeInOut' }}
+              className="absolute inset-0"
+            >
+              <img
+                src={images[current].url}
+                alt={`Hero banner ${current + 1}`}
+                className="w-full h-full object-fill"
+              />
+            </motion.div>
+          </AnimatePresence>
 
-      {/* Arrows */}
-      {images.length > 1 && (
-        <>
-          <button
-            onClick={prev}
-            className="absolute left-3 md:left-6 top-1/2 -translate-y-1/2 z-10 w-10 h-10 md:w-12 md:h-12 bg-black/40 backdrop-blur-sm text-white rounded-full flex items-center justify-center hover:bg-black/60 transition"
-          >
-            <ChevronLeft size={20} />
-          </button>
-          <button
-            onClick={next}
-            className="absolute right-3 md:right-6 top-1/2 -translate-y-1/2 z-10 w-10 h-10 md:w-12 md:h-12 bg-black/40 backdrop-blur-sm text-white rounded-full flex items-center justify-center hover:bg-black/60 transition"
-          >
-            <ChevronRight size={20} />
-          </button>
-        </>
-      )}
+          {/* Arrows */}
+          {images.length > 1 && (
+            <>
+              <button
+                onClick={prev}
+                className="absolute left-3 md:left-6 top-1/2 -translate-y-1/2 z-10 w-10 h-10 md:w-12 md:h-12 bg-black/40 backdrop-blur-sm text-white rounded-full flex items-center justify-center hover:bg-black/60 transition"
+              >
+                <ChevronLeft size={20} />
+              </button>
+              <button
+                onClick={next}
+                className="absolute right-3 md:right-6 top-1/2 -translate-y-1/2 z-10 w-10 h-10 md:w-12 md:h-12 bg-black/40 backdrop-blur-sm text-white rounded-full flex items-center justify-center hover:bg-black/60 transition"
+              >
+                <ChevronRight size={20} />
+              </button>
+            </>
+          )}
 
-      {/* Dot indicators */}
-      {images.length > 1 && (
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex gap-2">
-          {images.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => setCurrent(i)}
-              className={`rounded-full transition-all duration-300 ${i === current ? 'w-6 h-2 bg-white' : 'w-2 h-2 bg-white/50'}`}
-            />
-          ))}
+          {/* Dot indicators */}
+          {images.length > 1 && (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex gap-2">
+              {images.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setCurrent(i)}
+                  className={`rounded-full transition-all duration-300 ${i === current ? 'w-6 h-2 bg-slate-800' : 'w-2 h-2 bg-slate-800/20'}`}
+                />
+              ))}
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </section>
   );
 };
@@ -135,8 +142,8 @@ const PromoCardsRow = ({ cards }) => {
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-0">
       {slots.slice(0, 4).map((card, idx) => (
         card ? (
-          <div key={card.id || idx} className="w-full rounded-2xl overflow-hidden shadow-sm" style={{ aspectRatio: '3/2' }}>
-            <img src={card.url} alt={`Promo ${idx + 1}`} className="w-full h-full object-cover" />
+          <div key={card.id || idx} className="w-full rounded-2xl overflow-hidden shadow-sm bg-white border border-slate-100 p-1" style={{ aspectRatio: '3/2' }}>
+            <img src={card.url} alt={`Promo ${idx + 1}`} className="w-full h-full object-contain" />
           </div>
         ) : (
           <div
@@ -238,8 +245,8 @@ const DeliverySection = ({ deliveryImage }) => {
           className="relative"
         >
           {deliveryImage ? (
-            <div className="w-full rounded-[24px] overflow-hidden shadow-2xl" style={{ height: 'clamp(280px, 40vw, 480px)' }}>
-              <img src={deliveryImage} alt="Delivery quality" className="w-full h-full object-cover" />
+            <div className="w-full rounded-[32px] overflow-hidden shadow-xl bg-white border border-slate-100 p-2" style={{ height: 'clamp(280px, 40vw, 480px)' }}>
+              <img src={deliveryImage} alt="Delivery quality" className="w-full h-full object-contain" />
             </div>
           ) : (
             <div

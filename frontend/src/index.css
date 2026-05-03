@@ -164,6 +164,7 @@ h1, h2, h3, h4, h5, h6, .font-outfit {
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
 }
+.scroll-row::-webkit-scrollbar { display: none; }
 .scroll-row > * {
   flex-shrink: 0;
   scroll-snap-align: start;
@@ -189,7 +190,7 @@ h1, h2, h3, h4, h5, h6, .font-outfit {
 /* ─── Product Grid ───────────────────────────────── */
 .products-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 0.625rem;
 }
 @media (min-width: 640px) { .products-grid { grid-template-columns: repeat(4, 1fr); gap: 1rem; } }
@@ -205,7 +206,6 @@ h1, h2, h3, h4, h5, h6, .font-outfit {
   flex-direction: column;
 }
 
-/* ─── Flash Sale Scroll on Mobile ────────────────── */
 .flash-scroll {
   display: flex;
   gap: 0.75rem;
@@ -215,10 +215,11 @@ h1, h2, h3, h4, h5, h6, .font-outfit {
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
 }
+.flash-scroll::-webkit-scrollbar { display: none; }
 .flash-scroll > * {
   flex-shrink: 0;
   scroll-snap-align: start;
-  width: 160px;
+  width: 155px;
 }
 
 @media (min-width: 768px) {
@@ -239,7 +240,6 @@ h1, h2, h3, h4, h5, h6, .font-outfit {
   .flash-scroll { grid-template-columns: repeat(6, 1fr); }
 }
 
-/* ─── Category Pill Scroll ───────────────────────── */
 .cat-scroll {
   display: flex;
   gap: 1rem;
@@ -249,6 +249,7 @@ h1, h2, h3, h4, h5, h6, .font-outfit {
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
 }
+.cat-scroll::-webkit-scrollbar { display: none; }
 .cat-scroll > * {
   flex-shrink: 0;
   scroll-snap-align: start;

@@ -104,7 +104,11 @@ const ProductCard = ({ product, allProducts = [] }) => {
 
   return (
     <div
+<<<<<<< HEAD
       onClick={() => !isOutOfStock && navigate(`/product/${activeProduct.id}`)}
+=======
+      onClick={() => !isOutOfStock && navigate(`/product/${product.id}`)}
+>>>>>>> 4512855d17ce564b634e8c7cc3d233a5a20b2982
       className={`card-premium group relative flex flex-col w-full h-full overflow-hidden select-none
         ${showWholesaleTheme ? 'border-red-100' : ''}
         ${isOutOfStock ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}`}

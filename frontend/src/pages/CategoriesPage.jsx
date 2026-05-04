@@ -16,7 +16,7 @@ const containerVariants = {
 };
 
 const itemVariants = {
-  hidden: { opacity: 0, scale: 0.8, y: 20 },
+  hidden: { opacity: 0, scale: 0.95, y: 16 },
   show: { opacity: 1, scale: 1, y: 0 }
 };
 
@@ -60,7 +60,7 @@ const CategoriesPage = () => {
           </h1>
         </div>
 
-        {/* Categories Grid */}
+        {/* Categories Grid — Box Style */}
         {isLoading ? (
           <div className="flex justify-center py-20">
             <div className="w-10 h-10 border-4 border-slate-200 border-t-[var(--secondary)] rounded-full animate-spin"></div>
@@ -70,21 +70,31 @@ const CategoriesPage = () => {
             variants={containerVariants} 
             initial="hidden" 
             animate="show"
-            className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-x-4 gap-y-8"
+            className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4"
           >
              {categories.map((cat) => (
                <Link to={`/category/${cat.id}`} key={cat.id}>
                  <motion.div 
                    variants={itemVariants}
-                   whileHover={{ scale: 1.05 }} 
-                   className="flex flex-col items-center gap-3 cursor-pointer group w-full"
+                   whileHover={{ scale: 1.03, y: -4 }} 
+                   className="flex flex-col cursor-pointer group w-full bg-white rounded-2xl md:rounded-3xl border border-slate-100 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300"
                  >
-                    <div className={`w-[80px] h-[80px] sm:w-[90px] sm:h-[90px] md:w-[110px] md:h-[110px] rounded-full flex items-center justify-center overflow-hidden border-2 shadow-sm transition-all duration-300 relative ${isB2B ? 'bg-white border-slate-100 group-hover:border-[var(--secondary)] group-hover:shadow-lg' : 'bg-white border-transparent group-hover:border-[var(--secondary)] group-hover:shadow-lg'}`}>
-                      <img src={cat.image} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300 rounded-full" alt={cat.name} />
+                    {/* Image Container */}
+                    <div className="w-full aspect-square bg-slate-50 overflow-hidden relative">
+                      <img 
+                        src={cat.image} 
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+                        alt={cat.name} 
+                      />
+                      {/* Subtle gradient overlay at bottom */}
+                      <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/10 to-transparent" />
                     </div>
-                    <span className={`text-[11px] sm:text-[12px] md:text-[14px] font-black text-center leading-tight px-1 break-words line-clamp-2 w-full ${isB2B ? 'text-slate-600' : 'text-slate-800'}`}>
-                      {cat.name}
-                    </span>
+                    {/* Name */}
+                    <div className="px-3 py-3 md:px-4 md:py-4">
+                      <span className={`text-[12px] sm:text-[13px] md:text-[15px] font-extrabold leading-tight line-clamp-2 block ${isB2B ? 'text-slate-600 group-hover:text-[var(--secondary)]' : 'text-slate-800 group-hover:text-[var(--secondary)]'} transition-colors duration-200`}>
+                        {cat.name}
+                      </span>
+                    </div>
                  </motion.div>
                </Link>
              ))}

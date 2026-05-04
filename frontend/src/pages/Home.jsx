@@ -4,13 +4,13 @@ import ProductCard from '../components/ProductCard';
 import { useAuth } from '../context/AuthContext';
 import {
   ChevronRight, ChevronLeft, Star, TrendingUp, Package, Truck, ShieldCheck,
-  Leaf, Clock, Award, Zap, Image as ImageIcon, Rocket
+  Leaf, Clock, Award, Zap, Image as ImageIcon, Rocket, Timer
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 
 // ── Section Row ────────────────────────────────────────────────────────────
-const SectionRow = ({ title, subtitle, icon: Icon, products, accentColor = 'text-[var(--secondary)]' }) => {
+const SectionRow = ({ title, subtitle, icon: Icon, products, allProducts = [], accentColor = 'text-[var(--secondary)]' }) => {
   if (!products || products.length === 0) return null;
   return (
     <section className="max-w-[1440px] mx-auto px-4 lg:px-10 mb-10 md:mb-14">
@@ -26,7 +26,7 @@ const SectionRow = ({ title, subtitle, icon: Icon, products, accentColor = 'text
       <div className="scroll-row">
         {products.filter(p => p && p.id).map((product) => (
           <div key={product.id} className="w-[160px] md:w-auto">
-            <ProductCard product={product} />
+            <ProductCard product={product} allProducts={allProducts} />
           </div>
         ))}
       </div>
@@ -54,73 +54,80 @@ const HeroCarousel = ({ images }) => {
   // Placeholder when no images are uploaded
   if (!images || images.length === 0) {
     return (
-      <section className="w-full mb-6 md:mb-10">
-        <div
-          className="w-full bg-slate-100 border-2 border-dashed border-slate-200 flex flex-col items-center justify-center"
-          style={{ height: 'clamp(200px, 45vw, 560px)' }}
-        >
-          <div className="flex flex-col items-center gap-3 text-slate-300 text-center px-6">
-            <div className="w-20 h-20 rounded-3xl bg-slate-200 flex items-center justify-center">
-              <ImageIcon size={36} className="text-slate-300" />
+      <section className="w-full mt-6 mb-6 md:mb-10">
+        <div className="max-w-[1440px] mx-auto px-4 lg:px-10">
+          <div
+            className="w-full bg-slate-50 border-2 border-dashed border-slate-200 flex flex-col items-center justify-center rounded-[32px] overflow-hidden"
+            style={{ height: 'clamp(250px, 35vw, 500px)' }}
+          >
+            <div className="flex flex-col items-center gap-3 text-slate-300 text-center px-6">
+              <div className="w-20 h-20 rounded-3xl bg-slate-200 flex items-center justify-center">
+                <ImageIcon size={36} className="text-slate-300" />
+              </div>
+              <p className="text-sm font-black uppercase tracking-widest">Hero Carousel</p>
+              <p className="text-xs font-medium">Upload images from Admin Panel → Global Settings → Hero Carousel</p>
             </div>
-            <p className="text-sm font-black uppercase tracking-widest">Hero Carousel</p>
-            <p className="text-xs font-medium">Upload images from Admin Panel → Global Settings → Hero Carousel</p>
           </div>
         </div>
       </section>
     );
   }
 
+
   return (
-    <section className="w-full mb-6 md:mb-10 relative overflow-hidden" style={{ height: 'clamp(200px, 45vw, 560px)' }}>
-      {/* Slides */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={current}
-          initial={{ opacity: 0, x: 60 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -60 }}
-          transition={{ duration: 0.5, ease: 'easeInOut' }}
-          className="absolute inset-0"
-        >
-          <img
-            src={images[current].url}
-            alt={`Hero banner ${current + 1}`}
-            className="w-full h-full object-cover"
-          />
-        </motion.div>
-      </AnimatePresence>
+    <section className="w-full mt-6 mb-6 md:mb-10 relative overflow-hidden">
+      <div className="max-w-[1440px] mx-auto px-4 lg:px-10">
+        <div className="relative w-full rounded-[32px] overflow-hidden bg-slate-50 border border-slate-100 shadow-sm" style={{ height: 'clamp(240px, 35vw, 480px)' }}>
+          {/* Slides */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={current}
+              initial={{ opacity: 0, x: 60 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -60 }}
+              transition={{ duration: 0.5, ease: 'easeInOut' }}
+              className="absolute inset-0"
+            >
+              <img
+                src={images[current].url}
+                alt={`Hero banner ${current + 1}`}
+                className="w-full h-full object-fill"
+              />
+            </motion.div>
+          </AnimatePresence>
 
-      {/* Arrows */}
-      {images.length > 1 && (
-        <>
-          <button
-            onClick={prev}
-            className="absolute left-3 md:left-6 top-1/2 -translate-y-1/2 z-10 w-10 h-10 md:w-12 md:h-12 bg-black/40 backdrop-blur-sm text-white rounded-full flex items-center justify-center hover:bg-black/60 transition"
-          >
-            <ChevronLeft size={20} />
-          </button>
-          <button
-            onClick={next}
-            className="absolute right-3 md:right-6 top-1/2 -translate-y-1/2 z-10 w-10 h-10 md:w-12 md:h-12 bg-black/40 backdrop-blur-sm text-white rounded-full flex items-center justify-center hover:bg-black/60 transition"
-          >
-            <ChevronRight size={20} />
-          </button>
-        </>
-      )}
+          {/* Arrows */}
+          {images.length > 1 && (
+            <>
+              <button
+                onClick={prev}
+                className="absolute left-3 md:left-6 top-1/2 -translate-y-1/2 z-10 w-10 h-10 md:w-12 md:h-12 bg-black/40 backdrop-blur-sm text-white rounded-full flex items-center justify-center hover:bg-black/60 transition"
+              >
+                <ChevronLeft size={20} />
+              </button>
+              <button
+                onClick={next}
+                className="absolute right-3 md:right-6 top-1/2 -translate-y-1/2 z-10 w-10 h-10 md:w-12 md:h-12 bg-black/40 backdrop-blur-sm text-white rounded-full flex items-center justify-center hover:bg-black/60 transition"
+              >
+                <ChevronRight size={20} />
+              </button>
+            </>
+          )}
 
-      {/* Dot indicators */}
-      {images.length > 1 && (
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex gap-2">
-          {images.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => setCurrent(i)}
-              className={`rounded-full transition-all duration-300 ${i === current ? 'w-6 h-2 bg-white' : 'w-2 h-2 bg-white/50'}`}
-            />
-          ))}
+          {/* Dot indicators */}
+          {images.length > 1 && (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex gap-2">
+              {images.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setCurrent(i)}
+                  className={`rounded-full transition-all duration-300 ${i === current ? 'w-6 h-2 bg-slate-800' : 'w-2 h-2 bg-slate-800/20'}`}
+                />
+              ))}
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </section>
   );
 };
@@ -135,8 +142,8 @@ const PromoCardsRow = ({ cards }) => {
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-0">
       {slots.slice(0, 4).map((card, idx) => (
         card ? (
-          <div key={card.id || idx} className="w-full rounded-2xl overflow-hidden shadow-sm" style={{ aspectRatio: '3/2' }}>
-            <img src={card.url} alt={`Promo ${idx + 1}`} className="w-full h-full object-cover" />
+          <div key={card.id || idx} className="w-full rounded-2xl overflow-hidden shadow-sm bg-white border border-slate-100 p-1" style={{ aspectRatio: '3/2' }}>
+            <img src={card.url} alt={`Promo ${idx + 1}`} className="w-full h-full object-contain" />
           </div>
         ) : (
           <div
@@ -238,8 +245,8 @@ const DeliverySection = ({ deliveryImage }) => {
           className="relative"
         >
           {deliveryImage ? (
-            <div className="w-full rounded-[24px] overflow-hidden shadow-2xl" style={{ height: 'clamp(280px, 40vw, 480px)' }}>
-              <img src={deliveryImage} alt="Delivery quality" className="w-full h-full object-cover" />
+            <div className="w-full rounded-[32px] overflow-hidden shadow-xl bg-white border border-slate-100 p-2" style={{ height: 'clamp(280px, 40vw, 480px)' }}>
+              <img src={deliveryImage} alt="Delivery quality" className="w-full h-full object-contain" />
             </div>
           ) : (
             <div
@@ -344,10 +351,38 @@ const Home = () => {
   return (
     <div className="bg-white overflow-hidden pb-6">
 
-
-
       {/* ── Full-Width Hero Carousel ────────────────────── */}
       <HeroCarousel images={heroImages} />
+
+      {/* ── Same Day Delivery Banner ─────────────────────── */}
+      <section className="max-w-[1440px] mx-auto px-4 lg:px-10 mb-8 md:mb-10">
+        <div className="relative overflow-hidden rounded-2xl md:rounded-3xl bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-500 shadow-lg shadow-emerald-200/40">
+          <div className="absolute inset-0 pointer-events-none overflow-hidden">
+            <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-2xl" />
+            <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
+          </div>
+          <div className="relative z-10 flex items-center justify-between gap-4 px-5 py-4 md:px-8 md:py-5">
+            <div className="flex items-center gap-3 md:gap-5">
+              <div className="flex-shrink-0 w-11 h-11 md:w-14 md:h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/10">
+                <Truck size={22} className="text-white md:hidden" />
+                <Truck size={28} className="text-white hidden md:block" />
+              </div>
+              <div>
+                <h3 className="text-white font-black text-sm md:text-lg lg:text-xl leading-tight tracking-tight">Same Day Delivery</h3>
+                <p className="text-white/70 text-[10px] md:text-xs font-bold mt-0.5">Order now & get it delivered today — fresh & fast!</p>
+              </div>
+            </div>
+            <div className="flex-shrink-0 flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-xl md:rounded-2xl px-3 py-2 md:px-5 md:py-3 border border-white/10">
+              <Timer size={16} className="text-white md:hidden" />
+              <Timer size={20} className="text-white hidden md:block" />
+              <div>
+                <p className="text-[8px] md:text-[9px] font-black text-white/60 uppercase tracking-widest">Today</p>
+                <p className="text-white font-black text-xs md:text-sm leading-none">Free Delivery</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* ── Categories ──────────────────────────────────── */}
       <section className="max-w-[1440px] mx-auto px-4 lg:px-10 mb-10 md:mb-14">
@@ -380,12 +415,9 @@ const Home = () => {
       </section>
 
       {/* ── Trending ─────────────────────────────────────── */}
-      <SectionRow title="Trending" subtitle="Hot Right Now" icon={TrendingUp} products={homeSections.trending} accentColor="text-orange-500" />
+      <SectionRow title="Trending" subtitle="Hot Right Now" icon={TrendingUp} products={homeSections.trending} allProducts={products} accentColor="text-orange-500" />
 
-      {/* ── Latest ──────────────────────────────────────── */}
-      <SectionRow title="Just Arrived" subtitle="New Products" icon={Package} products={homeSections.latest} accentColor="text-indigo-500" />
-
-      {/* ── Flash Sale ──────────────────────────────────── */}
+      {/* ── Flash Sale (moved below Trending) ────────────── */}
       <section className="max-w-[1440px] mx-auto px-4 lg:px-10 mb-6 md:mb-10">
         <div className="relative rounded-[28px] md:rounded-[40px] overflow-hidden shadow-2xl"
           style={{ background: isB2B ? '#0f172a' : 'linear-gradient(135deg, #0f172a 0%, #1e0a3c 50%, #0f172a 100%)' }}>
@@ -414,7 +446,7 @@ const Home = () => {
               <div className="flash-scroll mb-8">
                 {flashProducts.map(product => (
                   <div key={`sale-${product.id}`} className="w-[155px] md:w-auto">
-                    <ProductCard product={product} />
+                    <ProductCard product={product} allProducts={products} />
                   </div>
                 ))}
               </div>
@@ -427,6 +459,9 @@ const Home = () => {
         </div>
       </section>
 
+      {/* ── Latest ──────────────────────────────────────── */}
+      <SectionRow title="Just Arrived" subtitle="New Products" icon={Package} products={homeSections.latest} allProducts={products} accentColor="text-indigo-500" />
+
       {/* Admin-managed promo image cards */}
       <section className="max-w-[1440px] mx-auto px-4 lg:px-10 mb-10">
         <PromoCardsRow cards={promoCards} />
@@ -434,7 +469,7 @@ const Home = () => {
 
 
       {/* ── Most Purchased ───────────────────────────────── */}
-      <SectionRow title="Crowd Favorites" subtitle="Most Purchased" icon={Star} products={homeSections.mostPurchased} accentColor="text-[var(--secondary)]" />
+      <SectionRow title="Crowd Favorites" subtitle="Most Purchased" icon={Star} products={homeSections.mostPurchased} allProducts={products} accentColor="text-[var(--secondary)]" />
 
       {/* ── Specialty Stores ─────────────────────────────── */}
       {stores.length > 0 && (

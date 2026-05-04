@@ -17,7 +17,7 @@ const THEMES = {
 };
 
 // ── Section Row Component for Store ───────────────────────────────────────
-const StoreSectionRow = ({ title, subtitle, icon: Icon, products, accentColor = 'text-emerald-400' }) => {
+const StoreSectionRow = ({ title, subtitle, icon: Icon, products, allProducts = [], accentColor = 'text-emerald-400' }) => {
   if (!products || products.length === 0) return null;
   return (
     <div className="mb-10">
@@ -35,7 +35,7 @@ const StoreSectionRow = ({ title, subtitle, icon: Icon, products, accentColor = 
             whileHover={{ y: -6, scale: 1.02 }}
             transition={{ type: 'spring', stiffness: 300 }}
           >
-            <ProductCard product={product} />
+            <ProductCard product={product} allProducts={allProducts} />
           </motion.div>
         ))}
       </div>
@@ -52,6 +52,7 @@ const StorePage = () => {
   // Real data state
   const [storeDetails, setStoreDetails] = useState(null);
   const [storeProducts, setStoreProducts] = useState([]);
+  const [allProducts, setAllProducts] = useState([]);
   const [homeSections, setHomeSections] = useState({ latest: [], trending: [], mostPurchased: [] });
   const [isLoading, setIsLoading] = useState(true);
 
@@ -81,6 +82,7 @@ const StorePage = () => {
         }
 
         setStoreDetails(currentStore);
+        setAllProducts(filteredProds);
         setStoreProducts(filteredProds.filter(p => p.storeId === id));
         
         // Filter sections to only show products from this store if they exist in store
@@ -223,6 +225,7 @@ const StorePage = () => {
                subtitle="In This Store"
                icon={Package}
                products={storeProducts}
+               allProducts={allProducts}
                accentColor="text-emerald-400"
              />
            )}
@@ -234,6 +237,7 @@ const StorePage = () => {
                subtitle="Hot Right Now"
                icon={TrendingUp}
                products={homeSections.trending}
+               allProducts={allProducts}
                accentColor="text-orange-400"
              />
            )}
@@ -244,6 +248,7 @@ const StorePage = () => {
                subtitle="Latest Products"
                icon={Package}
                products={homeSections.latest}
+               allProducts={allProducts}
                accentColor="text-indigo-400"
              />
            )}
@@ -254,6 +259,7 @@ const StorePage = () => {
                subtitle="Most Purchased"
                icon={Star}
                products={homeSections.mostPurchased}
+               allProducts={allProducts}
                accentColor="text-amber-400"
              />
            )}

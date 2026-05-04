@@ -152,7 +152,7 @@ const CategoryPage = () => {
         ) : processedProducts.length > 0 ? (
              <motion.div 
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-2 md:gap-4"
+                className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-2 md:gap-4"
              >
                 <AnimatePresence>
                   {processedProducts.map(product => (
@@ -164,7 +164,7 @@ const CategoryPage = () => {
                       exit={{ opacity: 0, scale: 0.9 }}
                       transition={{ duration: 0.2 }}
                     >
-                      <ProductCard product={product} />
+                      <ProductCard product={product} allProducts={products} />
                     </motion.div>
                   ))}
                 </AnimatePresence>

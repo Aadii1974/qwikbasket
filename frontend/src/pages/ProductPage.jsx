@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { fetchProducts } from '../services/api';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
-import { ChevronLeft, Plus, Minus, Star, ShieldCheck, Truck, Clock, BarChart3, Heart, Share2, Info, CheckCircle2, Package } from 'lucide-react';
+import { ChevronLeft, Plus, Minus, Star, ShieldCheck, Truck, Clock, BarChart3, Heart, Share2, Info, CheckCircle2, Package, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const ProductPage = () => {
@@ -13,9 +13,11 @@ const ProductPage = () => {
   const { user } = useAuth();
   
   const [product, setProduct] = useState(null);
+  const [allProducts, setAllProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeImage, setActiveImage] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
+  const [selectedVariantId, setSelectedVariantId] = useState(id);
   
   const autoScrollRef = useRef(null);
 
@@ -31,8 +33,10 @@ const ProductPage = () => {
       setLoading(true);
       try {
         const allProds = await fetchProducts();
+        setAllProducts(allProds || []);
         const p = allProds.find(item => item.id.toString() === id);
         setProduct(p || null);
+        setSelectedVariantId(id);
       } catch (err) {
         console.error(err);
       } finally {
@@ -80,17 +84,30 @@ const ProductPage = () => {
     );
   }
 
+  // Variant grouping
+  const getBaseName = (name) => {
+    if (!name) return '';
+    return name.replace(/\s*[-–]\s*\d+(\.\d+)?\s*(kg|g|l|ml|ltr|litre|piece|pcs|pack)\s*/gi, '').trim().toLowerCase();
+  };
+  const variants = allProducts.length > 0
+    ? allProducts.filter(p => p && p.name && getBaseName(p.name) === getBaseName(product.name) && p.packagingSize)
+    : [];
+  const hasVariants = variants.length > 1;
+  const activeProduct = (hasVariants && selectedVariantId !== product.id)
+    ? variants.find(v => v.id === selectedVariantId) || product
+    : product;
+
   // Cart State
-  const cartItem = cartItems.find(item => item.id === product.id);
+  const cartItem = cartItems.find(item => item.id === activeProduct.id);
   const currentQty = cartItem ? cartItem.quantity : 0;
-  const minQty = (showWholesaleData && isApproved) ? (product.minB2BQty || 1) : 1;
-  const stock = Number(product.stock) || 0;
+  const minQty = (showWholesaleData && isApproved) ? (activeProduct.minB2BQty || 1) : 1;
+  const stock = Number(activeProduct.stock) || 0;
   const isOutOfStock = stock <= 0;
 
   // Price Calculation
   const priceQty = currentQty > 0 ? currentQty : minQty;
-  const currentPrice = getTieredPrice ? getTieredPrice(product, priceQty) : (showWholesaleData ? product.b2bNewPrice : product.b2cNewPrice);
-  const oldPrice = showWholesaleData ? product.b2bOldPrice : product.b2cOldPrice;
+  const currentPrice = getTieredPrice ? getTieredPrice(activeProduct, priceQty) : (showWholesaleData ? activeProduct.b2bNewPrice : activeProduct.b2cNewPrice);
+  const oldPrice = showWholesaleData ? activeProduct.b2bOldPrice : activeProduct.b2cOldPrice;
   const discountPercent = oldPrice > currentPrice ? Math.round(((oldPrice - currentPrice) / oldPrice) * 100) : 0;
 
   // Tier Analysis
@@ -102,20 +119,20 @@ const ProductPage = () => {
 
   const handleAdd = () => {
      if (isOutOfStock) return;
-     addToCart(product, minQty);
+     addToCart(activeProduct, minQty);
   };
 
   const handleMinus = () => {
      if (cartItem.quantity - 1 < minQty) {
-        removeFromCart(product.id);
+        removeFromCart(activeProduct.id);
      } else {
-        updateQuantity(product.id, cartItem.quantity - 1);
+        updateQuantity(activeProduct.id, cartItem.quantity - 1);
      }
   };
 
   const handlePlus = () => {
     if (currentQty >= stock) return;
-    updateQuantity(product.id, currentQty + 1);
+    updateQuantity(activeProduct.id, currentQty + 1);
   };
 
   const themeBg = showWholesaleTheme ? 'bg-red-600' : 'bg-[var(--secondary)]';
@@ -163,7 +180,7 @@ const ProductPage = () => {
                 {discountPercent > 0 && (
                   <motion.div 
                     initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-                    className={`${themeBg} text-white px-3 py-1.5 rounded-full text-[10px] font-black shadow-lg shadow-black/5 uppercase tracking-wider`}>
+                    className={`${themeBg} text-white px-4 py-2 rounded-2xl text-sm md:text-base font-black shadow-lg shadow-black/10 uppercase tracking-wider`}>
                     -{discountPercent}% OFF
                   </motion.div>
                 )}
@@ -215,14 +232,19 @@ const ProductPage = () => {
             
             <div className="flex flex-wrap items-center gap-2 mb-4">
               <span className="text-[var(--secondary)] text-[10px] font-black uppercase tracking-[0.2em] px-3 py-1 bg-[var(--secondary)]/10 rounded-full border border-[var(--secondary)]/5">
-                {product.categoryId || 'General Inventory'}
+                {activeProduct.categoryId || 'General Inventory'}
               </span>
               <span className="text-slate-900 text-[10px] font-black uppercase tracking-widest px-3 py-1 bg-slate-100 rounded-full flex items-center gap-2">
-                <Package size={12} className="text-slate-400" /> {product.unit} {product.packagingSize ? ` \u00b7 \u26a1 ${product.packagingSize}` : ''}
+                <Package size={12} className="text-slate-400" /> {activeProduct.unit} {activeProduct.packagingSize ? ` \u00b7 \u26a1 ${activeProduct.packagingSize}` : ''}
               </span>
+              {discountPercent > 0 && (
+                <span className={`${themeBg} text-white text-[11px] font-black px-3 py-1 rounded-full`}>
+                  {discountPercent}% OFF
+                </span>
+              )}
             </div>
             <h1 className="text-3xl lg:text-5xl font-[900] text-slate-900 tracking-tight leading-tight mb-6">
-              {product.name}
+              {activeProduct.name}
             </h1>
 
             <div className="flex items-center gap-4 mb-8">
@@ -236,12 +258,33 @@ const ProductPage = () => {
               </div>
             </div>
 
+            {/* Variant Selector */}
+            {hasVariants && (
+              <div className="mb-8">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Select Variant</p>
+                <div className="relative w-full max-w-xs">
+                  <select
+                    value={selectedVariantId}
+                    onChange={(e) => { setSelectedVariantId(e.target.value); setActiveImage(0); }}
+                    className="w-full appearance-none bg-slate-50 border-2 border-slate-200 rounded-2xl px-4 py-3 text-sm font-bold text-slate-800 outline-none focus:border-[var(--secondary)] transition cursor-pointer pr-10"
+                  >
+                    {variants.map(v => (
+                      <option key={v.id} value={v.id}>
+                        {v.packagingSize}{v.ratePerUnit ? ` · ${v.ratePerUnit}` : ''} — ₹{Number(showWholesaleData ? v.b2bNewPrice : v.b2cNewPrice || 0).toFixed(2)}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                </div>
+              </div>
+            )}
+
             {/* 💰 Price Display */}
             <div className="flex flex-col gap-2 mb-10">
               <div className="flex items-baseline gap-3">
-                <span className="text-4xl lg:text-5xl font-black text-slate-900 tracking-tighter">₹{Number(currentPrice || 0).toFixed(2)}</span>
+                <span className="text-4xl lg:text-5xl font-black text-emerald-600 tracking-tighter">₹{Number(currentPrice || 0).toFixed(2)}</span>
                 {oldPrice > currentPrice && (
-                  <span className="text-xl text-slate-300 font-bold line-through">₹{Number(oldPrice || 0).toFixed(2)}</span>
+                  <span className="text-xl text-red-400 font-bold line-through">₹{Number(oldPrice || 0).toFixed(2)}</span>
                 )}
               </div>
               {showWholesaleData && isApproved && (
@@ -257,7 +300,7 @@ const ProductPage = () => {
                 {sortedTiers.map((t, idx) => (
                   <div key={idx} className="p-4 rounded-3xl bg-slate-50 border border-slate-100 hover:border-indigo-200 transition-colors group">
                     <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Buy {t.minQty}+</p>
-                    <p className="text-lg font-black text-slate-900">₹{Number(t.price).toFixed(2)}</p>
+                    <p className="text-lg font-black text-emerald-600">₹{Number(t.price).toFixed(2)}</p>
                   </div>
                 ))}
               </div>
@@ -311,7 +354,7 @@ const ProductPage = () => {
                 <button className="text-xs font-black uppercase tracking-widest text-slate-300 hover:text-slate-500 transition-colors pb-2">Logistics</button>
               </div>
               <p className="text-slate-500 font-medium leading-relaxed text-sm lg:text-base">
-                {product.description || "Premium quality inventory addition curated for instant delivery. Optimized for freshness and rapid logistics transit, ensuring the highest standards of culinary or industrial utility."}
+                {activeProduct.description || "Premium quality inventory addition curated for instant delivery. Optimized for freshness and rapid logistics transit, ensuring the highest standards of culinary or industrial utility."}
               </p>
             </div>
           </div>
@@ -323,7 +366,7 @@ const ProductPage = () => {
         <div className="bg-white/80 backdrop-blur-2xl border border-white/50 p-4 rounded-[32px] shadow-[0_20px_50px_rgba(0,0,0,0.15)] flex items-center justify-center gap-4">
           <div className="flex-1">
             <p className="text-[10px] font-black text-slate-400 uppercase ml-1">Price</p>
-            <p className="text-xl font-black text-slate-900">₹{Number(currentPrice).toFixed(2)}</p>
+            <p className="text-xl font-black text-emerald-600">₹{Number(currentPrice).toFixed(2)}</p>
           </div>
           
           {!cartItem ? (

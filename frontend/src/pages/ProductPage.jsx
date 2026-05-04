@@ -25,9 +25,30 @@ const ProductPage = () => {
   const isActualB2B = user?.role === 'b2b';
   const isActualAdmin = user?.role === 'admin';
   const isApproved = user?.isApproved || isActualAdmin;
-  const showWholesaleTheme = isActualB2B || (isActualAdmin && window.location.hash === '#b2b-view'); 
-  const showWholesaleData = isActualB2B || isActualAdmin;
+  const isWholesaleActive = (isActualB2B && isApproved) || (isActualAdmin && window.location.hash === '#b2b-view');
+  const showWholesaleTheme = isWholesaleActive;
+  const showWholesaleData = isWholesaleActive;
 
+  // Data Selectors (Safe to run before early returns)
+  const getBaseName = (name) => {
+    if (!name) return '';
+    return name.replace(/\s*[-–]\s*\d+(\.\d+)?\s*(kg|g|l|ml|ltr|litre|piece|pcs|pack)\s*/gi, '').trim().toLowerCase();
+  };
+  const variants = (allProducts.length > 0 && product)
+    ? allProducts.filter(p => p && p.name && getBaseName(p.name) === getBaseName(product.name) && p.packagingSize)
+    : [];
+  const hasVariants = variants.length > 1;
+  const activeProduct = (hasVariants && selectedVariantId !== product?.id)
+    ? variants.find(v => v.id === selectedVariantId) || product
+    : product;
+
+  let images = [];
+  try {
+    images = activeProduct ? (typeof activeProduct.images === 'string' ? JSON.parse(activeProduct.images) : (Array.isArray(activeProduct.images) ? activeProduct.images : [])) : [];
+  } catch (e) { images = []; }
+
+  // ── Hooks ────────────────────────────────────────────────────────────
+  
   useEffect(() => {
     const loadProduct = async () => {
       setLoading(true);
@@ -46,23 +67,16 @@ const ProductPage = () => {
     loadProduct();
   }, [id]);
 
-  // Image Processing
-  let images = [];
-  try {
-    images = product ? (typeof product.images === 'string' ? JSON.parse(product.images) : (Array.isArray(product.images) ? product.images : [])) : [];
-  } catch (e) {
-    images = [];
-  }
-
-  // Auto-scrolling logic
   useEffect(() => {
     if (images.length > 1) {
-      autoScrollRef.current = setInterval(() => {
+      const timer = setInterval(() => {
         setActiveImage((prev) => (prev + 1) % images.length);
       }, 3000);
+      return () => clearInterval(timer);
     }
-    return () => clearInterval(autoScrollRef.current);
   }, [images.length]);
+
+  // ── Early Returns ────────────────────────────────────────────────────
 
   if (loading) {
     return (
@@ -84,18 +98,7 @@ const ProductPage = () => {
     );
   }
 
-  // Variant grouping
-  const getBaseName = (name) => {
-    if (!name) return '';
-    return name.replace(/\s*[-–]\s*\d+(\.\d+)?\s*(kg|g|l|ml|ltr|litre|piece|pcs|pack)\s*/gi, '').trim().toLowerCase();
-  };
-  const variants = allProducts.length > 0
-    ? allProducts.filter(p => p && p.name && getBaseName(p.name) === getBaseName(product.name) && p.packagingSize)
-    : [];
-  const hasVariants = variants.length > 1;
-  const activeProduct = (hasVariants && selectedVariantId !== product.id)
-    ? variants.find(v => v.id === selectedVariantId) || product
-    : product;
+  // ── Derived State (Depends on product being non-null) ───────────────
 
   // Cart State
   const cartItem = cartItems.find(item => item.id === activeProduct.id);
@@ -107,13 +110,13 @@ const ProductPage = () => {
   // Price Calculation
   const priceQty = currentQty > 0 ? currentQty : minQty;
   const currentPrice = getTieredPrice ? getTieredPrice(activeProduct, priceQty) : (showWholesaleData ? activeProduct.b2bNewPrice : activeProduct.b2cNewPrice);
-  const oldPrice = showWholesaleData ? activeProduct.b2bOldPrice : activeProduct.b2cOldPrice;
+  const oldPrice = showWholesaleData ? (activeProduct.b2bOldPrice || activeProduct.b2cNewPrice) : activeProduct.b2cOldPrice;
   const discountPercent = oldPrice > currentPrice ? Math.round(((oldPrice - currentPrice) / oldPrice) * 100) : 0;
 
   // Tier Analysis
   let tiers = [];
   try {
-    if (product.b2bTiers) tiers = JSON.parse(product.b2bTiers);
+    if (activeProduct?.b2bTiers) tiers = JSON.parse(activeProduct.b2bTiers);
   } catch (e) {}
   const sortedTiers = [...tiers].sort((a, b) => a.minQty - b.minQty);
 
@@ -170,7 +173,7 @@ const ProductPage = () => {
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.4, ease: "circOut" }}
                   src={images[activeImage] || 'https://placehold.co/600'} 
-                  alt={product.name} 
+                  alt={activeProduct?.name || 'Product'} 
                   className="w-full h-full object-contain p-8 md:p-12 mix-blend-multiply" 
                 />
               </AnimatePresence>

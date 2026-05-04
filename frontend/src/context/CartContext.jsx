@@ -16,7 +16,8 @@ export const CartProvider = ({ children }) => {
   });
 
   const getTieredPrice = (product, quantity) => {
-    if (user?.role !== 'b2b' || !user?.isApproved) return product.b2cNewPrice || 0;
+    const isWholesale = (user?.role === 'b2b' && user?.isApproved) || (user?.role === 'admin' && window.location.hash === '#b2b-view');
+    if (!isWholesale) return product.b2cNewPrice || 0;
 
     const basePrice = product.b2bNewPrice || 0;
     if (!product.b2bTiers) return basePrice;

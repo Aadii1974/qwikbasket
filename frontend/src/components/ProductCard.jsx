@@ -19,8 +19,9 @@ const ProductCard = ({ product, allProducts = [] }) => {
   const isActualB2B = user?.role === 'b2b';
   const isActualAdmin = user?.role === 'admin';
   const isApproved = user?.isApproved || isActualAdmin;
-  const showWholesaleTheme = isActualB2B || (isActualAdmin && window.location.hash === '#b2b-view');
-  const showWholesaleData = isActualB2B || isActualAdmin;
+  const isWholesaleActive = (isActualB2B && isApproved) || (isActualAdmin && window.location.hash === '#b2b-view');
+  const showWholesaleTheme = isWholesaleActive;
+  const showWholesaleData = isWholesaleActive;
 
   // Build variants list — group products that share the same base name
   const getBaseName = (name) => {
@@ -51,7 +52,7 @@ const ProductCard = ({ product, allProducts = [] }) => {
   // Price Calculation
   const priceQty = currentQty > 0 ? currentQty : minQty;
   const rawCurrentPrice = getTieredPrice ? getTieredPrice(activeProduct, priceQty) : (showWholesaleData ? activeProduct.b2bNewPrice : activeProduct.b2cNewPrice);
-  const rawOldPrice = showWholesaleData ? activeProduct.b2bOldPrice : activeProduct.b2cOldPrice;
+  const rawOldPrice = showWholesaleData ? (activeProduct.b2bOldPrice || activeProduct.b2cNewPrice) : activeProduct.b2cOldPrice;
   const currentPrice = Number(rawCurrentPrice || 0);
   const oldPrice = Number(rawOldPrice || 0);
   const discountPercent = oldPrice > currentPrice && oldPrice > 0 ? Math.round(((oldPrice - currentPrice) / oldPrice) * 100) : 0;
@@ -104,11 +105,7 @@ const ProductCard = ({ product, allProducts = [] }) => {
 
   return (
     <div
-<<<<<<< HEAD
       onClick={() => !isOutOfStock && navigate(`/product/${activeProduct.id}`)}
-=======
-      onClick={() => !isOutOfStock && navigate(`/product/${product.id}`)}
->>>>>>> 4512855d17ce564b634e8c7cc3d233a5a20b2982
       className={`card-premium group relative flex flex-col w-full h-full overflow-hidden select-none
         ${showWholesaleTheme ? 'border-red-100' : ''}
         ${isOutOfStock ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}`}

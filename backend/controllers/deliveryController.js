@@ -19,6 +19,9 @@ const getDeliveryAgents = async (req, res) => {
 const createDeliveryAgent = async (req, res) => {
   try {
     const { name, phone, password } = req.body;
+    if (!/^[6-9]\d{9}$/.test(phone)) {
+      return res.status(400).json({ success: false, error: 'Invalid Indian mobile number. Must be a 10-digit number starting with 6, 7, 8, or 9.' });
+    }
     const bcrypt = require('bcryptjs');
     const hashedPassword = await bcrypt.hash(password, 10);
 

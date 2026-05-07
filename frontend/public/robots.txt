@@ -1,0 +1,22 @@
+User-agent: *
+Allow: /
+Allow: /search
+Allow: /our-story
+Allow: /bulk-basket
+Allow: /product/
+Allow: /category/
+Allow: /categories
+
+Disallow: /admin
+Disallow: /admin/*
+Disallow: /delivery
+Disallow: /cart
+Disallow: /profile
+Disallow: /login
+Disallow: /api/
+
+# Sitemap
+Sitemap: https://qwikbasket.in/sitemap.xml
+
+# Crawl-delay (be nice to bots)
+Crawl-delay: 1

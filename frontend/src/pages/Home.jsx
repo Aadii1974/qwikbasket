@@ -1,13 +1,16 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { fetchProducts, fetchStores, fetchCategories, fetchHomeSections, fetchSettings } from '../services/api';
+import { fetchProducts, fetchStores, fetchCategories, fetchHomeSections, fetchSettings, fetchValuePacks } from '../services/api';
+import useSEO from '../hooks/useSEO';
 import ProductCard from '../components/ProductCard';
 import { useAuth } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
 import {
   ChevronRight, ChevronLeft, Star, TrendingUp, Package, Truck, ShieldCheck,
-  Leaf, Clock, Award, Zap, Image as ImageIcon, Rocket, Timer
+  Leaf, Clock, Award, Zap, Image as ImageIcon, Rocket, Timer,
+  Sparkles, ArrowRight, ShoppingBasket, TrendingDown, Gift, X, Search
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 // ── Section Row ────────────────────────────────────────────────────────────
 const SectionRow = ({ title, subtitle, icon: Icon, products, allProducts = [], accentColor = 'text-[var(--secondary)]' }) => {
@@ -30,6 +33,300 @@ const SectionRow = ({ title, subtitle, icon: Icon, products, allProducts = [], a
           </div>
         ))}
       </div>
+    </section>
+  );
+};
+
+// ── Value Packs Section ──────────────────────────────────────────────────
+// ── Value Packs Section ──────────────────────────────────────────────────
+const ValuePackCard = ({ pack, onViewDetails }) => {
+  const { addValuePackToCart } = useCart();
+  const [added, setAdded] = useState(false);
+
+  const handleAdd = () => {
+    addValuePackToCart(pack);
+    setAdded(true);
+    setTimeout(() => setAdded(false), 2000);
+  };
+
+  const originalPrice = Number(pack.originalPrice || 0);
+  const price = Number(pack.price || 0);
+  const discountPercent = originalPrice > price && originalPrice > 0 ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0;
+  const savingsAmount = originalPrice - price;
+
+  return (
+    <div className="bg-white border border-slate-100 rounded-[32px] overflow-hidden shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:shadow-[0_24px_50px_rgba(0,0,0,0.15)] hover:-translate-y-2 transition-all duration-300 group flex flex-col h-full w-[250px] md:w-auto flex-shrink-0">
+      <div className="relative aspect-[4/3] overflow-hidden bg-slate-50">
+        <img src={pack.image || 'https://placehold.co/400x300?text=Value+Pack'} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt={pack.name} />
+        
+        {/* Dynamic Discount Badge */}
+        {discountPercent > 0 && (
+          <div className="absolute top-3 left-3 bg-red-500 text-white font-black text-[10px] md:text-[11px] px-3 py-1 rounded-xl shadow-lg uppercase tracking-wider animate-pulse">
+            -{discountPercent}% OFF
+          </div>
+        )}
+
+        <div className="absolute bottom-3 right-3 bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-2xl shadow-md border border-white/40">
+           <p className="text-[10px] font-black text-[var(--secondary)] uppercase tracking-widest leading-none">SAVE ₹{savingsAmount}</p>
+        </div>
+      </div>
+      <div className="p-5 flex-1 flex flex-col">
+        <h3 className="font-black text-slate-900 text-base md:text-lg mb-1.5 leading-tight line-clamp-1 group-hover:text-[var(--secondary)] transition-colors duration-200">{pack.name}</h3>
+        
+        <p className="text-[10px] text-slate-400 font-extrabold uppercase tracking-widest mb-3 flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+          Contains {(() => {
+            const items = typeof pack.items === 'string' ? JSON.parse(pack.items) : (pack.items || []);
+            return items.length;
+          })()} curated items
+        </p>
+        
+        <div className="flex items-baseline gap-2 mb-4">
+           <span className="text-xl md:text-2xl font-black text-emerald-600 tracking-tight">₹{pack.price}</span>
+           {originalPrice > price && (
+             <span className="text-xs md:text-sm text-red-400 line-through font-bold">₹{pack.originalPrice}</span>
+           )}
+        </div>
+        
+        <div className="space-y-2 mb-5 hidden md:block">
+           {(() => {
+              const items = typeof pack.items === 'string' ? JSON.parse(pack.items) : (pack.items || []);
+               return items.slice(0, 3).map((item, i) => (
+                 <div key={i} className="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-100 text-[10px] font-extrabold text-slate-600">
+                    <div className="flex items-center gap-2 truncate mr-2">
+                       <span className="text-emerald-500">{item.quantity || 1}x</span>
+                       <span className="truncate">{item.name}</span>
+                    </div>
+                    <span className="flex-shrink-0 text-slate-400">₹{item.price}</span>
+                 </div>
+               ));
+           })()}
+        </div>
+
+        <div className="flex gap-2 mt-auto">
+          <button 
+            onClick={() => onViewDetails(pack)}
+            className="flex-1 py-3 rounded-2xl font-black text-[10px] md:text-xs uppercase tracking-widest border-2 border-[var(--secondary)]/20 text-[var(--secondary)] hover:bg-[var(--secondary)]/5 transition-all"
+          >
+            View Items
+          </button>
+          <button 
+            onClick={handleAdd}
+            className={`flex-1 py-3 rounded-2xl font-black text-[10px] md:text-xs uppercase tracking-widest transition-all shadow-md active:scale-95 ${added ? 'bg-emerald-500 text-white shadow-emerald-200' : 'bg-slate-900 text-white hover:bg-black'}`}
+          >
+            {added ? 'Added!' : 'Add Pack'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ── Value Pack Details Modal Component ───────────────────────────────────
+const ValuePackDetailsModal = ({ pack, onClose }) => {
+  const { addValuePackToCart } = useCart();
+  const [added, setAdded] = useState(false);
+
+  const handleAdd = () => {
+    addValuePackToCart(pack);
+    setAdded(true);
+    setTimeout(() => {
+      setAdded(false);
+      onClose();
+    }, 1500);
+  };
+
+  const originalPrice = Number(pack.originalPrice || 0);
+  const price = Number(pack.price || 0);
+
+  return (
+    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+        className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm"
+      />
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.9, y: 20 }}
+        className="relative bg-white w-full max-w-lg rounded-[28px] sm:rounded-[32px] overflow-hidden shadow-2xl border border-white flex flex-col max-h-[90vh] z-50"
+      >
+        {/* Modal Header */}
+        <div className="relative h-32 sm:h-48 flex-shrink-0">
+          <img src={pack.image || 'https://placehold.co/400x300?text=Value+Pack'} className="w-full h-full object-cover" alt="" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+          <button 
+            onClick={onClose}
+            className="absolute top-3 right-3 sm:top-4 sm:right-4 w-8 h-8 sm:w-10 sm:h-10 bg-white/20 backdrop-blur-md text-white rounded-full flex items-center justify-center hover:bg-white/40 transition z-10"
+          >
+            <X size={18} />
+          </button>
+          <div className="absolute bottom-3 left-4 sm:bottom-6 sm:left-6 right-4 sm:right-6">
+            <span className="bg-emerald-500 text-white text-[8px] sm:text-[10px] font-black px-2 sm:px-3 py-0.5 sm:py-1 rounded-full uppercase tracking-widest mb-1 sm:mb-2 inline-block">Special Value Pack</span>
+            <h2 className="text-lg sm:text-2xl font-black text-white leading-tight truncate">{pack.name}</h2>
+          </div>
+        </div>
+
+        {/* Modal Body */}
+        <div className="p-5 sm:p-8 overflow-y-auto custom-scrollbar">
+          <div className="flex justify-between items-end mb-4 sm:mb-6">
+            <div>
+              <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1">Bundle Total</p>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl sm:text-3xl font-black text-slate-900">₹{pack.price}</span>
+                {originalPrice > price && (
+                  <span className="text-xs sm:text-sm text-slate-400 line-through font-bold">₹{pack.originalPrice}</span>
+                )}
+              </div>
+            </div>
+            {originalPrice > price && (
+              <div className="text-right">
+                 <span className="bg-emerald-100 text-emerald-600 text-[10px] sm:text-xs font-black px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl font-extrabold">SAVE ₹{originalPrice - price}</span>
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-3 sm:space-y-4">
+            <h4 className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 sm:mb-4">What's inside this pack</h4>
+            {(() => {
+              const items = typeof pack.items === 'string' ? JSON.parse(pack.items) : (pack.items || []);
+              return items.map((item, idx) => (
+                <div key={idx} className="flex items-center justify-between p-3 sm:p-4 bg-slate-50 rounded-xl sm:rounded-2xl border border-slate-100 group hover:border-emerald-200 transition">
+                   <div className="flex items-center gap-3 sm:gap-4">
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white rounded-lg sm:rounded-xl flex items-center justify-center font-black text-emerald-500 shadow-sm border border-slate-100 text-xs sm:text-sm">
+                         {item.quantity}x
+                      </div>
+                      <div className="min-w-0">
+                         <p className="font-black text-slate-800 text-xs sm:text-sm truncate max-w-[120px] sm:max-w-none">{item.name}</p>
+                         <p className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase">{item.unit}</p>
+                      </div>
+                   </div>
+                   <div className="text-right flex-shrink-0">
+                      <p className="font-black text-slate-900 text-xs sm:text-sm">₹{item.price * item.quantity}</p>
+                      <p className="text-[9px] sm:text-[10px] text-slate-400 line-through font-bold">₹{(item.previousPrice || item.price) * item.quantity}</p>
+                   </div>
+                </div>
+              ));
+            })()}
+          </div>
+
+          <div className="mt-6 sm:mt-8">
+            <button 
+              onClick={handleAdd}
+              className="w-full bg-slate-900 text-white py-3.5 sm:py-4 rounded-xl sm:rounded-2xl font-black shadow-xl hover:bg-black transition-all flex items-center justify-center gap-2 text-sm sm:text-base"
+            >
+              <ShoppingBasket size={18} />
+              {added ? 'Added to Cart!' : 'Add Bundle to Cart'}
+            </button>
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  );
+};
+
+const ValuePacksSection = ({ packs }) => {
+  const [selectedPack, setSelectedPack] = useState(null);
+  const [textIndex, setTextIndex] = useState(0);
+  const rotatingTexts = [
+    "🔥 Save up to 40% on Daily Farm-Fresh Essentials!",
+    "📦 Curated by culinary experts for perfect recipe bundles!",
+    "⚡ Quick 1-Click checkout & lightning-fast home delivery!",
+    "🍒 No middlemen, no cold storage — 100% organic farm sourcing!",
+    "💎 Supercharge your monthly budget with stacked discounts!"
+  ];
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTextIndex((prev) => (prev + 1) % rotatingTexts.length);
+    }, 3200);
+    return () => clearInterval(interval);
+  }, [rotatingTexts.length]);
+
+  if (!packs || packs.length === 0) return null;
+
+  return (
+    <section className="w-full mb-10 md:mb-14 relative overflow-hidden bg-slate-950 rounded-[32px] md:rounded-[48px] max-w-[1440px] mx-auto">
+      <div className="absolute inset-0">
+        <img 
+          src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?q=80&w=2832&auto=format&fit=crop" 
+          alt="Lush green farm" 
+          className="w-full h-full object-cover opacity-35 scale-105 hover:scale-100 transition-transform duration-[10s]" 
+        />
+        {/* Rich emerald gradient overlay for brand consistency and legibility */}
+        <div className="absolute inset-0 bg-gradient-to-tr from-emerald-950/95 via-teal-900/80 to-slate-950/95 mix-blend-multiply"></div>
+        
+        {/* Decorative lighting elements */}
+        <div className="absolute inset-0 pointer-events-none">
+          <motion.div 
+            animate={{ 
+              scale: [1, 1.2, 1],
+              opacity: [0.15, 0.3, 0.15],
+              x: [0, 50, 0],
+              y: [0, -30, 0]
+            }}
+            transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute top-0 right-10 w-96 h-96 bg-emerald-400/20 rounded-full blur-[120px]" 
+          />
+          <motion.div 
+            animate={{ 
+              scale: [1, 1.15, 1],
+              opacity: [0.15, 0.25, 0.15],
+              x: [0, -40, 0],
+              y: [0, 40, 0]
+            }}
+            transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute -bottom-24 -left-24 w-80 h-80 bg-teal-400/20 rounded-full blur-[100px]" 
+          />
+        </div>
+      </div>
+
+      <div className="relative z-10 py-12 md:py-16 px-6 lg:px-12">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 px-1">
+          <div>
+            <span className="text-[10px] md:text-xs font-black text-emerald-300 uppercase tracking-[0.3em] mb-2 block">Monthly Stacks</span>
+            <h2 className="text-3xl md:text-5xl font-[900] text-white heading-tight flex items-center gap-3">
+              <Gift size={32} className="text-yellow-400 fill-yellow-400 animate-pulse" />
+              Value Packs
+            </h2>
+            
+            {/* Continuously changing dynamic text */}
+            <div className="h-10 flex items-center overflow-hidden mt-4">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={textIndex}
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -15 }}
+                  transition={{ duration: 0.4, ease: "easeInOut" }}
+                  className="text-yellow-300 text-xs md:text-sm font-extrabold flex items-center gap-2 bg-yellow-400/10 px-4 py-2 rounded-full border border-yellow-400/20 shadow-sm"
+                >
+                  <Sparkles size={14} className="text-yellow-400 animate-spin-slow flex-shrink-0" />
+                  <span>{rotatingTexts[textIndex]}</span>
+                </motion.div>
+              </AnimatePresence>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex overflow-x-auto gap-5 md:gap-7 snap-x custom-scrollbar pb-6 -mx-4 px-4 lg:-mx-12 lg:px-12">
+          {packs.map(pack => (
+            <div key={pack.id} className="snap-start flex-shrink-0 w-[270px] md:w-[330px]">
+              <ValuePackCard pack={pack} onViewDetails={setSelectedPack} />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Details Modal rendered at parent level to avoid clipping ── */}
+      <AnimatePresence>
+        {selectedPack && (
+          <ValuePackDetailsModal pack={selectedPack} onClose={() => setSelectedPack(null)} />
+        )}
+      </AnimatePresence>
     </section>
   );
 };
@@ -91,7 +388,7 @@ const HeroCarousel = ({ images }) => {
               <img
                 src={images[current].url}
                 alt={`Hero banner ${current + 1}`}
-                className="w-full h-full object-fill"
+                className="w-full h-full object-cover"
               />
             </motion.div>
           </AnimatePresence>
@@ -139,16 +436,16 @@ const PromoCardsRow = ({ cards }) => {
   while (slots.length < 4) slots.push(null);
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-0">
+    <div className="flex overflow-x-auto snap-x custom-scrollbar pb-4 gap-3 md:gap-4 mb-0 -mx-4 px-4 lg:-mx-10 lg:px-10">
       {slots.slice(0, 4).map((card, idx) => (
         card ? (
-          <div key={card.id || idx} className="w-full rounded-2xl overflow-hidden shadow-sm bg-white border border-slate-100 p-1" style={{ aspectRatio: '3/2' }}>
+          <div key={card.id || idx} className="snap-start flex-shrink-0 w-[240px] md:w-[280px] lg:w-[calc(25%-1rem)] rounded-2xl overflow-hidden shadow-sm bg-white border border-slate-100 p-1" style={{ aspectRatio: '3/2' }}>
             <img src={card.url} alt={`Promo ${idx + 1}`} className="w-full h-full object-contain" />
           </div>
         ) : (
           <div
             key={`placeholder-${idx}`}
-            className="w-full rounded-2xl bg-slate-800/60 border border-white/10 border-dashed flex flex-col items-center justify-center text-white/30 gap-2"
+            className="snap-start flex-shrink-0 w-[240px] md:w-[280px] lg:w-[calc(25%-1rem)] rounded-2xl bg-slate-800/60 border border-white/10 border-dashed flex flex-col items-center justify-center text-white/30 gap-2"
             style={{ aspectRatio: '3/2' }}
           >
             <ImageIcon size={20} />
@@ -291,11 +588,18 @@ const DeliverySection = ({ deliveryImage }) => {
 // ── Main Home ───────────────────────────────────────────────────────────────
 const Home = () => {
   const { user } = useAuth();
+  useSEO({
+    title: 'Fresh Grocery & Farm Delivery – Order Online',
+    description: 'QwikBasket delivers fresh groceries, dairy, fruits & vegetables to your door in 45–60 mins. Qwik & Smart Delivery. Best farm-fresh prices. Order now!',
+    canonical: '/',
+    keywords: ['grocery delivery', 'farm fresh delivery', 'online grocery', 'same day delivery', 'fresh vegetables online', 'dairy delivery'],
+  });
   const isB2B = user?.role === 'b2b';
   const [products, setProducts] = useState([]);
   const [stores, setStores] = useState([]);
   const [categories, setCategories] = useState([]);
   const [homeSections, setHomeSections] = useState({ latest: [], trending: [], mostPurchased: [] });
+  const [valuePacks, setValuePacks] = useState([]);
   const [siteSettings, setSiteSettings] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -303,8 +607,8 @@ const Home = () => {
     const loadAll = async () => {
       setIsLoading(true);
       try {
-        const [psRaw, ss, cs, sections, settingsData] = await Promise.all([
-          fetchProducts(), fetchStores(), fetchCategories(), fetchHomeSections(), fetchSettings()
+        const [psRaw, ss, cs, sections, settingsData, packData] = await Promise.all([
+          fetchProducts(), fetchStores(), fetchCategories(), fetchHomeSections(), fetchSettings(), fetchValuePacks()
         ]);
         const allProds = psRaw || [];
         let filteredProds = allProds;
@@ -316,7 +620,18 @@ const Home = () => {
         setProducts(filteredProds);
         setStores(ss || []);
         setCategories(cs || []);
-        setHomeSections(sections || { latest: [], trending: [], mostPurchased: [] });
+        setValuePacks(packData || []);
+        
+        // Filter homeSections based on user role
+        let safeSections = sections || { latest: [], trending: [], mostPurchased: [] };
+        const allowedIds = new Set(filteredProds.map(p => p.id));
+        
+        setHomeSections({
+          latest: (safeSections.latest || []).filter(p => allowedIds.has(p.id)),
+          trending: (safeSections.trending || []).filter(p => allowedIds.has(p.id)),
+          mostPurchased: (safeSections.mostPurchased || []).filter(p => allowedIds.has(p.id))
+        });
+        
         setSiteSettings(settingsData);
       } catch (err) {
         console.error('Home loading error:', err);
@@ -354,30 +669,45 @@ const Home = () => {
       {/* ── Full-Width Hero Carousel ────────────────────── */}
       <HeroCarousel images={heroImages} />
 
+      {/* ── Mobile Search Bar ──────────────────────────── */}
+      <section className="lg:hidden max-w-[1440px] mx-auto px-4 mb-6 md:mb-8">
+        <form onSubmit={(e) => { e.preventDefault(); const q = e.target.elements.q.value; if(q) window.location.href = '/search?q=' + encodeURIComponent(q); }} className="relative w-full group">
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[var(--secondary)] transition-colors pointer-events-none">
+            <Search size={18} strokeWidth={2.5} />
+          </span>
+          <input
+            name="q"
+            type="text"
+            placeholder={isB2B ? 'Search bulk inventory...' : 'Search groceries, dairy, produce...'}
+            className="w-full py-4 pl-12 pr-4 rounded-2xl bg-slate-50 border border-slate-200 text-sm font-bold text-slate-800 placeholder:text-slate-400 outline-none transition-all focus:bg-white focus:border-[var(--secondary)]/40 focus:ring-4 focus:ring-[var(--secondary)]/10 shadow-sm"
+          />
+        </form>
+      </section>
+
       {/* ── Same Day Delivery Banner ─────────────────────── */}
       <section className="max-w-[1440px] mx-auto px-4 lg:px-10 mb-8 md:mb-10">
-        <div className="relative overflow-hidden rounded-2xl md:rounded-3xl bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-500 shadow-lg shadow-emerald-200/40">
+        <div className="relative overflow-hidden rounded-2xl md:rounded-3xl bg-gradient-to-r from-[#2B3E14] via-[#3B541C] to-[#1E2C0E] shadow-[0_16px_36px_rgba(43,62,20,0.4),_0_6px_16px_rgba(0,0,0,0.15),_inset_0_1px_0_rgba(255,255,255,0.1)] border border-[#3B541C]/30">
           <div className="absolute inset-0 pointer-events-none overflow-hidden">
-            <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-2xl" />
-            <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
+            <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/5 rounded-full blur-2xl" />
+            <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-white/5 rounded-full blur-2xl" />
           </div>
           <div className="relative z-10 flex items-center justify-between gap-4 px-5 py-4 md:px-8 md:py-5">
             <div className="flex items-center gap-3 md:gap-5">
-              <div className="flex-shrink-0 w-11 h-11 md:w-14 md:h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/10">
-                <Truck size={22} className="text-white md:hidden" />
-                <Truck size={28} className="text-white hidden md:block" />
+              <div className="flex-shrink-0 w-11 h-11 md:w-14 md:h-14 rounded-2xl bg-[#FFE353]/10 backdrop-blur-sm flex items-center justify-center border border-[#FFE353]/20 shadow-inner">
+                <Truck size={22} className="text-[#FFE353] md:hidden" />
+                <Truck size={28} className="text-[#FFE353] hidden md:block" />
               </div>
               <div>
-                <h3 className="text-white font-black text-sm md:text-lg lg:text-xl leading-tight tracking-tight">Same Day Delivery</h3>
-                <p className="text-white/70 text-[10px] md:text-xs font-bold mt-0.5">Order now & get it delivered today — fresh & fast!</p>
+                <h3 className="text-[#FFE353] font-[900] text-sm md:text-lg lg:text-xl leading-tight tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]">Same Day Delivery</h3>
+                <p className="text-[#FFF7A3]/90 text-[10px] md:text-xs font-bold mt-0.5">Order now & get it delivered today — fresh & fast!</p>
               </div>
             </div>
-            <div className="flex-shrink-0 flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-xl md:rounded-2xl px-3 py-2 md:px-5 md:py-3 border border-white/10">
-              <Timer size={16} className="text-white md:hidden" />
-              <Timer size={20} className="text-white hidden md:block" />
+            <div className="flex-shrink-0 flex items-center gap-2 bg-[#FFF275]/15 backdrop-blur-sm rounded-xl md:rounded-2xl px-3 py-2 md:px-5 md:py-3 border border-[#FFF275]/25 shadow-md">
+              <Timer size={16} className="text-[#FFF275] md:hidden" />
+              <Timer size={20} className="text-[#FFF275] hidden md:block" />
               <div>
-                <p className="text-[8px] md:text-[9px] font-black text-white/60 uppercase tracking-widest">Today</p>
-                <p className="text-white font-black text-xs md:text-sm leading-none">Free Delivery</p>
+                <p className="text-[8px] md:text-[9px] font-black text-[#FFF275]/70 uppercase tracking-widest">Today</p>
+                <p className="text-[#FFF275] font-black text-xs md:text-sm leading-none">Free Delivery</p>
               </div>
             </div>
           </div>
@@ -414,53 +744,105 @@ const Home = () => {
         </div>
       </section>
 
+      {/* ── Build Your Own Basket System ───────────────── */}
+      <section className="max-w-[850px] mx-auto px-4 mb-8 md:mb-10">
+        <Link to="/bulk-basket" className="group block relative overflow-hidden rounded-[24px] md:rounded-[28px] bg-slate-900 shadow-xl border border-slate-800">
+           {/* Decorative blurs */}
+           <div className="absolute inset-0 pointer-events-none overflow-hidden">
+              <div className="absolute -top-10 -right-10 w-48 h-48 bg-blue-500/10 rounded-full blur-[60px]" />
+           </div>
+
+           <div className="relative z-10 px-5 py-5 md:px-8 md:py-6 flex flex-row items-center justify-between gap-4">
+              <div className="text-left flex-1">
+                 <div className="inline-flex items-center gap-2 bg-blue-500/20 text-blue-400 text-[8px] font-black px-2.5 py-1 rounded-full uppercase tracking-widest mb-1.5 border border-blue-500/20">
+                    <Sparkles size={10} /> Volume System
+                 </div>
+                 <h2 className="text-base md:text-xl lg:text-2xl font-black text-white leading-tight mb-1">
+                    Build Your Own<br className="hidden md:block" />
+                    <span className="text-blue-400 text-sm md:text-lg lg:text-xl"> Basket & Save Big</span>
+                 </h2>
+                 <p className="text-slate-400 font-medium text-[9px] md:text-xs max-w-[180px] md:max-w-sm mb-3 md:mb-4 leading-relaxed">
+                    Extra <span className="text-white">{siteSettings?.bulkDiscountPercentage || 5}% discount</span> on bulk orders over ₹{siteSettings?.bulkDiscountThreshold || 2000}.
+                 </p>
+                 
+                 <div className="flex flex-wrap justify-start gap-2 md:gap-3">
+                    <div className="flex items-center gap-1.5 bg-white/5 border border-white/10 px-2 md:px-4 py-1.5 md:py-2 rounded-lg">
+                       <TrendingDown className="text-emerald-400" size={14} />
+                       <p className="text-white font-black text-[9px] md:text-xs">₹500+ Savings</p>
+                    </div>
+                 </div>
+              </div>
+
+              <div className="flex-shrink-0 relative group-hover:scale-105 transition-transform duration-500">
+                 <div className="w-20 h-20 md:w-36 md:h-36 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-[18px] md:rounded-[28px] flex items-center justify-center shadow-lg relative">
+                    <ShoppingBasket className="text-white w-10 h-10 md:w-20 md:h-20" />
+                    <div className="absolute -top-1.5 -right-1.5 bg-emerald-500 text-white rounded-lg px-2 py-1 shadow-lg border border-slate-900">
+                       <p className="text-[10px] md:text-base font-black leading-none">{siteSettings?.bulkDiscountPercentage || 5}%</p>
+                    </div>
+                 </div>
+              </div>
+           </div>
+
+           <div className="bg-white/5 border-t border-white/10 px-5 py-2.5 flex items-center justify-between">
+              <p className="text-[9px] font-bold text-slate-400">Warehouse factory rates.</p>
+              <div className="flex items-center gap-1 text-blue-400 font-black text-[10px] group-hover:translate-x-1 transition-transform">
+                 Go to Bulk Store <ArrowRight size={12} />
+              </div>
+           </div>
+        </Link>
+      </section>
+
       {/* ── Trending ─────────────────────────────────────── */}
       <SectionRow title="Trending" subtitle="Hot Right Now" icon={TrendingUp} products={homeSections.trending} allProducts={products} accentColor="text-orange-500" />
 
       {/* ── Flash Sale (moved below Trending) ────────────── */}
-      <section className="max-w-[1440px] mx-auto px-4 lg:px-10 mb-6 md:mb-10">
-        <div className="relative rounded-[28px] md:rounded-[40px] overflow-hidden shadow-2xl"
+      <section className="w-full mb-6 md:mb-10 relative overflow-hidden">
+        {/* Full-width premium background */}
+        <div className="absolute inset-0"
           style={{ background: isB2B ? '#0f172a' : 'linear-gradient(135deg, #0f172a 0%, #1e0a3c 50%, #0f172a 100%)' }}>
-          <div className="absolute inset-0 pointer-events-none overflow-hidden">
-            <div className="absolute -top-20 -left-20 w-72 h-72 bg-[var(--secondary)]/20 rounded-full blur-[80px]" />
-            <div className="absolute -bottom-20 -right-10 w-72 h-72 bg-purple-600/20 rounded-full blur-[80px]" />
-          </div>
-          <div className="relative z-10 px-6 md:px-10 py-7 md:py-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 border-b border-white/5">
-            <div>
-              <div className="flex items-center gap-2.5 mb-3">
-                <span className="animate-pulse w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_10px_2px_rgba(239,68,68,0.6)]" />
-                <span className="text-white/50 text-[10px] font-black uppercase tracking-[0.35em]">Live Deals</span>
-              </div>
-              <h2 className="text-3xl md:text-5xl lg:text-6xl font-[900] text-white heading-tight flex items-center gap-3">
-                <Zap size={30} className="text-yellow-400 fill-yellow-400 flex-shrink-0" />
-                {isB2B ? 'Bulk Deals' : 'Flash Store'}
-              </h2>
+          <div className="absolute top-0 left-0 w-96 h-96 bg-[var(--secondary)]/20 rounded-full blur-[100px]" />
+          <div className="absolute bottom-0 right-0 w-96 h-96 bg-purple-600/20 rounded-full blur-[100px]" />
+        </div>
+
+        <div className="relative z-10 max-w-[1440px] mx-auto px-4 lg:px-10 py-10 md:py-14 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 border-b border-white/5">
+          <div>
+            <div className="flex items-center gap-2.5 mb-3">
+              <span className="animate-pulse w-3 h-3 rounded-full bg-red-500 shadow-[0_0_12px_3px_rgba(239,68,68,0.6)]" />
+              <span className="text-white/60 text-[11px] font-black uppercase tracking-[0.35em]">Live Deals</span>
             </div>
-            <div className="flex flex-col items-start md:items-end gap-1">
-              <span className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1">Ends In</span>
-              <FlashTimer />
+            <h2 className="text-4xl md:text-6xl font-[900] text-white heading-tight flex items-center gap-4">
+              <Zap size={36} className="text-yellow-400 fill-yellow-400 flex-shrink-0" />
+              {isB2B ? 'Bulk Deals' : 'Flash Store'}
+            </h2>
+          </div>
+          <div className="flex flex-col items-start md:items-end gap-1.5 bg-white/5 backdrop-blur-md px-6 py-4 rounded-3xl border border-white/10">
+            <span className="text-xs font-black text-white/60 uppercase tracking-[0.2em] mb-1">Ends In</span>
+            <FlashTimer />
+          </div>
+        </div>
+
+        <div className="relative z-10 max-w-[1440px] mx-auto px-4 lg:px-10 pb-12 pt-8">
+          {flashProducts.length > 0 ? (
+            <div className="flex overflow-x-auto gap-4 md:gap-6 snap-x custom-scrollbar pb-6">
+              {flashProducts.map(product => (
+                <div key={`sale-${product.id}`} className="snap-start flex-shrink-0 w-[180px] md:w-[220px] lg:w-[250px] bg-white/10 backdrop-blur-xl rounded-[24px] p-2 border border-white/20 shadow-2xl">
+                  <ProductCard product={product} allProducts={products} />
+                </div>
+              ))}
             </div>
-          </div>
-          <div className="relative z-10 p-5 md:p-10">
-            {flashProducts.length > 0 ? (
-              <div className="flash-scroll mb-8">
-                {flashProducts.map(product => (
-                  <div key={`sale-${product.id}`} className="w-[155px] md:w-auto">
-                    <ProductCard product={product} allProducts={products} />
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="py-8 text-center">
-                <p className="text-white/20 text-lg font-black uppercase tracking-[0.3em] mb-8">Restocking Pulse deals...</p>
-              </div>
-            )}
-          </div>
+          ) : (
+            <div className="py-12 text-center">
+              <p className="text-white/30 text-xl font-black uppercase tracking-[0.3em] mb-8">Restocking Pulse deals...</p>
+            </div>
+          )}
         </div>
       </section>
 
       {/* ── Latest ──────────────────────────────────────── */}
       <SectionRow title="Just Arrived" subtitle="New Products" icon={Package} products={homeSections.latest} allProducts={products} accentColor="text-indigo-500" />
+
+      {/* ── Value Packs ──────────────────────────────────── */}
+      <ValuePacksSection packs={valuePacks} />
 
       {/* Admin-managed promo image cards */}
       <section className="max-w-[1440px] mx-auto px-4 lg:px-10 mb-10">

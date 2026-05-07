@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { loginUser, registerUser } from '../services/api';
+import { getUserProfile, loginUser, registerUser } from '../services/api';
 
 const AuthContext = createContext();
 
@@ -50,6 +50,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     localStorage.removeItem('user');
+    localStorage.removeItem('qb_addresses');
     setUser(null);
   };
 
@@ -59,8 +60,21 @@ export const AuthProvider = ({ children }) => {
     setUser(newUser);
   };
 
+  const refreshUser = async () => {
+    try {
+      const res = await getUserProfile();
+      if (res?.success && res.data) {
+        updateUser(res.data);
+        return res.data;
+      }
+    } catch (e) {
+      console.error("Error refreshing user profile:", e);
+    }
+    return null;
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, signup, logout, updateUser, loading }}>
+    <AuthContext.Provider value={{ user, login, signup, logout, updateUser, refreshUser, loading }}>
       {children}
     </AuthContext.Provider>
   );

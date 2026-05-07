@@ -15,6 +15,9 @@ const getAddresses = async (req, res) => {
 const createAddress = async (req, res) => {
   try {
     const { fullName, phone, addressLine, landmark, pincode, city, state, isDefault } = req.body;
+    if (!/^[6-9]\d{9}$/.test(phone)) {
+      return res.status(400).json({ success: false, error: 'Invalid Indian mobile number. Must be a 10-digit number starting with 6, 7, 8, or 9.' });
+    }
     
     // If setting as default, unset others first
     if (isDefault) {
@@ -39,6 +42,9 @@ const updateAddress = async (req, res) => {
   try {
     const { id } = req.params;
     const { isDefault, fullName, phone, addressLine, landmark, pincode, city, state } = req.body;
+    if (phone !== undefined && !/^[6-9]\d{9}$/.test(phone)) {
+      return res.status(400).json({ success: false, error: 'Invalid Indian mobile number. Must be a 10-digit number starting with 6, 7, 8, or 9.' });
+    }
 
     const address = await Address.findOne({ where: { id, userId: req.user.id } });
     if (!address) return res.status(404).json({ success: false, error: 'Address not found' });

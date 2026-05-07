@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
+import useSEO from '../hooks/useSEO';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { Mail, Lock, User, Briefcase, ChevronRight, Eye, EyeOff, Building, FileText } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const Login = () => {
+  useSEO({ title: 'Sign In or Register', description: 'Log in or create your QwikBasket account to order fresh groceries, track deliveries and earn Farmer Coins.', canonical: '/login' });
   const [isLogin, setIsLogin] = useState(true);
   const [role, setRole] = useState('b2c');
   const [showPassword, setShowPassword] = useState(false);
@@ -20,6 +22,10 @@ const Login = () => {
       if (isLogin) {
         await login(formData.phone, formData.password);
       } else {
+        if (!/^[6-9]\d{9}$/.test(formData.phone)) {
+          setError('Please enter a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9.');
+          return;
+        }
         await signup({ ...formData, role });
       }
       navigate('/');
@@ -93,7 +99,7 @@ const Login = () => {
             <div className="relative group">
                {/* Using standard User/Phone icon placeholder */}
                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[var(--secondary)]"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
-               <input type="tel" required value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} placeholder="e.g., 9876543210" className="w-full bg-gray-50 border border-gray-100 py-4 pl-12 pr-4 rounded-[var(--radius-md)] outline-none focus:bg-white focus:border-[var(--secondary)] transition" />
+               <input type="tel" required maxLength={10} value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, '') })} placeholder="e.g., 9876543210" className="w-full bg-gray-50 border border-gray-100 py-4 pl-12 pr-4 rounded-[var(--radius-md)] outline-none focus:bg-white focus:border-[var(--secondary)] transition" />
             </div>
           </div>
 

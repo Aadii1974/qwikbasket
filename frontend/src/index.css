@@ -6,17 +6,17 @@
 
 :root {
   /* B2C Core Palette */
-  --primary: #F4D03F;
-  --secondary: #00B13D;
-  --secondary-dark: #008F32;
+  --primary: #ffdc4e;
+  --secondary: #044f1d;
+  --secondary-dark: #00d44a;
   --accent: #FF5A5A;
   
-  --background: #FFFFFF;
-  --surface: #F8FAF9;
-  --surface-secondary: #F1F5F2;
+  --background: #ffffff;
+  --surface: #ffffff;
+  --surface-secondary: #c8ffd6;
   
-  --text-main: #0F1117;
-  --text-body: #475467;
+  --text-main: #1f610b;
+  --text-body: #02520a;
   --text-muted: #8A9BAE;
   
   --border-light: rgba(0, 177, 61, 0.1);
@@ -92,19 +92,31 @@ h1, h2, h3, h4, h5, h6, .font-outfit {
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--border-subtle);
+  /* overflow MUST be visible so dropdown panels can render outside the nav bounds */
+  overflow: visible !important;
 }
 
 /* ─── Product Card ───────────────────────────────── */
 .card-premium {
   background: white;
-  border: 1.5px solid var(--border-subtle);
+  border: 1px solid rgba(255, 255, 255, 0.782);
   border-radius: var(--radius-lg);
+  /* 3D elevation shadow */
+  box-shadow: 
+    0 2px 4px rgba(0,0,0,0.02),
+    0 8px 16px rgba(15, 17, 23, 0.05),
+    0 16px 32px rgba(15, 17, 23, 0.04),
+    inset 0 1px 0 rgba(255,255,255,0.6);
   transition: transform 0.25s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.25s cubic-bezier(0.2, 0, 0, 1), border-color 0.25s;
   cursor: pointer;
 }
 .card-premium:hover {
-  transform: translateY(-3px);
-  box-shadow: var(--shadow-lg);
+  transform: translateY(-5px);
+  box-shadow: 
+    0 4px 8px rgba(0,0,0,0.03),
+    0 16px 24px rgba(15, 17, 23, 0.06),
+    0 24px 48px rgba(15, 17, 23, 0.1),
+    inset 0 1px 0 rgba(255,255,255,0.8);
   border-color: var(--border-light);
 }
 
@@ -129,6 +141,7 @@ h1, h2, h3, h4, h5, h6, .font-outfit {
 .gradient-text {
   background: linear-gradient(135deg, var(--text-main) 0%, var(--text-muted) 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -279,9 +292,174 @@ h1, h2, h3, h4, h5, h6, .font-outfit {
   .bottom-nav-safe { padding-bottom: env(safe-area-inset-bottom); }
 }
 
+/* ─── Custom xs breakpoint (< 480px phones) ──────── */
+/* used by hidden xs:flex utilities in Header */
+@media (min-width: 480px) {
+  .xs\:flex { display: flex !important; }
+  .xs\:hidden { display: none !important; }
+  .xs\:block { display: block !important; }
+}
+
+/* ─── Header: no overflow clipping (allows dropdown to show) ── */
+header {
+  width: 100%;
+  /* NOTE: Do NOT set overflow-x:hidden here — it clips dropdown menus */
+}
+/* glass-nav inner row clips horizontal scroll via its inner div, not header */
+
+/* ─── Dropdown fade-in animation ─────────────────── */
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-8px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-fade-in {
+  animation: fadeInDown 0.18s ease forwards;
+  transform-origin: top right;
+}
+
 /* ─── Global Transitions (selective — not all) ───── */
 a, button, .card-premium, .btn-premium {
   transition-property: background-color, border-color, color, opacity, transform, box-shadow;
   transition-duration: 0.2s;
   transition-timing-function: ease;
 }
+
+/* ─── Checkout: Sticky Bottom Bar ────────────────── */
+.checkout-sticky-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 55;
+  background: rgba(255,255,255,0.97);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(0,0,0,0.06);
+  padding: 0.75rem 1rem;
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  box-shadow: 0 -4px 24px rgba(0,0,0,0.08);
+}
+@media (min-width: 1024px) {
+  .checkout-sticky-bar { display: none; }
+}
+
+/* ─── Checkout: Mobile Summary Sheet ─────────────── */
+.summary-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(4px);
+}
+.summary-sheet {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 61;
+  background: white;
+  border-radius: 24px 24px 0 0;
+  max-height: 85vh;
+  overflow-y: auto;
+  padding: 1.5rem;
+  padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+  box-shadow: 0 -8px 40px rgba(0,0,0,0.15);
+}
+.summary-sheet-handle {
+  width: 40px;
+  height: 4px;
+  background: #d1d5db;
+  border-radius: 999px;
+  margin: 0 auto 1rem;
+}
+
+/* ─── Checkout: Cart page overflow fix ───────────── */
+.cart-page {
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow-x: hidden;
+  padding-bottom: 100px; /* space for sticky bar */
+}
+@media (min-width: 1024px) {
+  .cart-page { padding-bottom: 2rem; }
+}
+
+/* ─── Checkout: Touch-friendly tap targets ───────── */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ─── Checkout: Stepper mobile compact ───────────── */
+.checkout-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding: 0.75rem 0;
+}
+.checkout-stepper .step-dot {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 900;
+  flex-shrink: 0;
+  transition: all 0.3s;
+}
+.checkout-stepper .step-line {
+  height: 2px;
+  width: 2rem;
+  margin: 0 0.25rem;
+  flex-shrink: 0;
+  transition: background 0.3s;
+}
+@media (min-width: 640px) {
+  .checkout-stepper .step-line { width: 4rem; }
+  .checkout-stepper .step-dot { width: 40px; height: 40px; font-size: 14px; }
+}
+
+/* ─── Checkout: Address card mobile ──────────────── */
+.addr-card {
+  padding: 1rem;
+  border-radius: 1rem;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+.addr-card.selected {
+  border-color: var(--secondary);
+  background: rgba(0, 177, 61, 0.04);
+}
+
+/* ─── Checkout: Form inputs mobile ───────────────── */
+.checkout-input {
+  width: 100%;
+  padding: 0.875rem 0.875rem 0.875rem 2.5rem;
+  border-radius: 0.875rem;
+  border: 2px solid #f1f5f9;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  outline: none;
+  background: white;
+  transition: border-color 0.2s;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.checkout-input:focus {
+  border-color: var(--secondary);
+}
+.checkout-input::placeholder {
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+/* ─── Hide bottom nav on cart page ───────────────── */
+.cart-page-active .bottom-nav-wrapper { display: none !important; }

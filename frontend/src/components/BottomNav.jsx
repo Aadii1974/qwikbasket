@@ -32,6 +32,8 @@ const BottomNav = () => {
     { path: user ? '/profile' : '/login', icon: <User size={24} />, label: 'Profile' },
   ];
 
+  if (location.pathname === '/cart') return null;
+
   return (
     <div 
       className={`fixed bottom-4 left-4 right-4 z-50 md:hidden transition-transform duration-300 ${isVisible ? 'translate-y-0' : 'translate-y-[150%]'}`}

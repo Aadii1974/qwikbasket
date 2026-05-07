@@ -5,11 +5,22 @@ import { fetchProducts, fetchCategories } from '../services/api';
 import { Search, ChevronDown, Filter } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
+import useSEO from '../hooks/useSEO';
 
 const CategoryPage = () => {
   const { slug } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [category, setCategory] = useState(null);
+
+  useSEO({
+    title: category ? `${category.name} – Shop Fresh Online` : 'Fresh Grocery Category',
+    description: category 
+      ? `Buy fresh, organic ${category.name} online from QwikBasket. Direct farm-sourced premium quality produce delivered to your doorstep in 45–60 mins.`
+      : 'Browse our collection of fresh groceries and local organic farm produce on QwikBasket.',
+    canonical: `/category/${slug}`,
+    keywords: category ? [`buy ${category.name}`, `fresh ${category.name}`, `organic ${category.name} delivery`] : [],
+  });
   
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -17,7 +28,6 @@ const CategoryPage = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('relevance');
-  const [category, setCategory] = useState(null);
 
   useEffect(() => {
     const loadInitialData = async () => {

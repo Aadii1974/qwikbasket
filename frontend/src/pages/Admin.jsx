@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { Users, Package, Store as StoreIcon, Zap, Edit, Trash, Plus, Check, LayoutGrid, MapPin, ShoppingBag, ChevronDown, Truck, Clock, BarChart3, TrendingUp, DollarSign, Activity, Tag as TagIcon, Image as ImageIcon, Calendar, Rocket, ToggleLeft, ToggleRight, Upload, Gift, Disc, Award, Star, Settings as SettingsIcon, MousePointerClick, Sparkles } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { Users, Package, Store as StoreIcon, Zap, Edit, Trash, Plus, Check, LayoutGrid, MapPin, ShoppingBag, ChevronDown, Truck, Clock, BarChart3, TrendingUp, DollarSign, Activity, Tag as TagIcon, Image as ImageIcon, Calendar, Rocket, ToggleLeft, ToggleRight, Upload } from 'lucide-react';
 import { 
   fetchProducts, createProduct, updateProduct, deleteProduct,
   fetchStores, createStore, updateStore, deleteStore,
@@ -10,7 +10,8 @@ import {
   fetchSettings, updateSettings,
   fetchDeliveryAgents, createDeliveryAgent, deleteDeliveryAgent, assignOrderToAgent, fetchSettlementData, processSettlement,
   fetchAllCoupons, createCoupon, updateCoupon, deleteCoupon,
-  uploadImage
+  uploadImage,
+  fetchValuePacks, createValuePack, updateValuePack, deleteValuePack
 } from '../services/api';
 
 
@@ -53,9 +54,15 @@ const Admin = () => {
   
   // B2B Pricing Tiers State
   const [b2bTiers, setB2bTiers] = useState([]);
+  const [productVariants, setProductVariants] = useState([]);
 
   const [pincodes, setPincodes] = useState([]);
   const [newPincode, setNewPincode] = useState('');
+
+  const [valuePacks, setValuePacks] = useState([]);
+  const [editingValuePack, setEditingValuePack] = useState(null);
+  const [isValuePackModalOpen, setIsValuePackModalOpen] = useState(false);
+  const [packItems, setPackItems] = useState([]);
 
   // Image Upload State
   const [imageFile, setImageFile] = useState(null);
@@ -98,6 +105,11 @@ const Admin = () => {
     launchMessage: 'We are launching soon! Stay tuned.',
     // Delivery Slots
     deliverySlots: '[]',
+    // Bulk Basket Deals
+    bulkDiscountThreshold: 2000,
+    bulkDiscountPercentage: 5,
+    // Checkout Dynamic Sections
+    checkoutSections: '[]',
   });
 
 
@@ -111,8 +123,8 @@ const Admin = () => {
   const loadInitialData = async () => {
     setIsLoading(true);
     try {
-      const [prodData, storeData, catData, pendingData, pincodeData, orderData, statsData, settingsData, agentData, settleData, couponData, bannerData] = await Promise.all([
-        fetchProducts(),
+      const [prodData, storeData, catData, pendingData, pincodeData, orderData, statsData, settingsData, agentData, settleData, couponData, packData] = await Promise.all([
+        fetchProducts(true),
         fetchStores(),
         fetchCategories(),
         fetchPendingB2B(),
@@ -122,11 +134,11 @@ const Admin = () => {
         fetchSettings(),
         fetchDeliveryAgents(),
         fetchSettlementData(),
-        fetchAllCoupons()
+        fetchAllCoupons(),
+        fetchValuePacks()
       ]);
 
       setProducts(prodData || []);
-
       setStores(storeData || []);
       setCategories(catData || []);
       setPendingUsers(pendingData || []);
@@ -137,9 +149,9 @@ const Admin = () => {
       setDeliveryAgents(agentData || []);
       setSettlementData(settleData || []);
       setCoupons(couponData || []);
-
+      setValuePacks(packData || []);
     } catch (err) {
-      console.error("Failed to load admin data:", err);
+      console.error('Error loading admin data:', err);
     } finally {
       setIsLoading(false);
     }
@@ -186,6 +198,7 @@ const Admin = () => {
 
     apiData.append('minB2BQty', formData.get('minB2BQty') || 1);
     apiData.append('b2bTiers', JSON.stringify(b2bTiers));
+    apiData.append('variants', JSON.stringify(productVariants));
     
     // Explicitly handle UUID/optional fields
     apiData.append('storeId', formData.get('storeId') || "");
@@ -193,6 +206,7 @@ const Admin = () => {
     apiData.append('subCategoryId', formData.get('subCategoryId') || "");
     
     apiData.append('isFlashSale', formData.get('isFlashSale') === 'on');
+    apiData.append('isBulkOnly', formData.get('isBulkOnly') === 'on');
     apiData.append('packagingSize', formData.get('packagingSize') || '');
     apiData.append('ratePerUnit', formData.get('ratePerUnit') || '');
     
@@ -372,10 +386,15 @@ const Admin = () => {
   const handleCreateAgent = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
+    const phone = formData.get('phone');
+    if (!/^[6-9]\d{9}$/.test(phone)) {
+      alert('Please enter a valid 10-digit Indian phone number starting with 6, 7, 8, or 9.');
+      return;
+    }
     try {
       await createDeliveryAgent({
         name: formData.get('name'),
-        phone: formData.get('phone'),
+        phone,
         password: formData.get('password')
       });
       alert('Delivery Agent created successfully!');
@@ -452,16 +471,54 @@ const Admin = () => {
     } catch (e) { alert('Error deleting'); }
   };
 
+  const handleSaveValuePack = async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const calculatedPrice = packItems.reduce((sum, item) => sum + (Number(item.price || 0) * (item.quantity || 1)), 0);
+    const calculatedOriginalPrice = packItems.reduce((sum, item) => sum + (Number(item.previousPrice || item.price || 0) * (item.quantity || 1)), 0);
+    const data = {
+       name: formData.get('name'),
+       description: formData.get('description'),
+       price: calculatedPrice,
+       originalPrice: calculatedOriginalPrice,
+       stock: Number(formData.get('stock') || 100),
+       isActive: formData.get('isActive') === 'true' || formData.get('isActive') === null, 
+       items: packItems,
+       image: formData.get('image')
+    };
+
+    try {
+       if (editingValuePack) {
+          await updateValuePack(editingValuePack.id, data);
+       } else {
+          await createValuePack(data);
+       }
+       setIsValuePackModalOpen(false);
+       loadInitialData();
+    } catch (err) { alert('Error saving value pack'); }
+  };
+
+  const handleDeleteValuePack = async (id) => {
+    if (!window.confirm('Delete this value pack?')) return;
+    try {
+       await deleteValuePack(id);
+       loadInitialData();
+    } catch (err) { alert('Error deleting value pack'); }
+  };
+
 
   return (
-    <div className="bg-slate-50 min-h-screen pt-12 pb-24">
+    <div className="bg-slate-50 min-h-screen pt-4 md:pt-12 pb-24">
       <div className="max-w-[1400px] mx-auto px-4 lg:px-8">
-        <h1 className="text-4xl font-black mb-10 tracking-tight text-slate-900">Admin Control Panel <span className="align-middle inline-block bg-[var(--secondary)] text-white text-xs px-3 py-1 rounded-full ml-3 tracking-widest uppercase">Super Admin</span></h1>
+        <h1 className="text-2xl md:text-4xl font-black mb-6 md:mb-10 tracking-tight text-slate-900 flex items-center gap-3">
+          Admin Control
+          <span className="bg-[var(--secondary)] text-white text-[10px] px-2.5 py-1 rounded-full tracking-widest uppercase font-black">Super Admin</span>
+        </h1>
         
-        <div className="bg-white rounded-[32px] border border-gray-100 shadow-xl overflow-hidden flex flex-col md:flex-row min-h-[700px]">
-           {/* Sidebar Navigation */}
-           <div className="w-full md:w-72 bg-slate-900 text-white p-6 flex flex-col gap-2 flex-shrink-0">
-              <h3 className="text-xs font-black text-slate-400 tracking-[0.2em] uppercase mb-4 mt-2 px-4">Dashboard Menu</h3>
+        <div className="bg-white rounded-[24px] md:rounded-[32px] border border-gray-100 shadow-xl overflow-hidden flex flex-col md:flex-row min-h-[500px] md:min-h-[700px]">
+           {/* Sidebar Navigation - Responsive Scroll on Mobile */}
+           <div className="w-full md:w-72 bg-slate-900 text-white p-4 md:p-6 flex flex-row md:flex-col gap-2 flex-shrink-0 overflow-x-auto md:overflow-x-visible no-scrollbar">
+              <h3 className="hidden md:block text-xs font-black text-slate-400 tracking-[0.2em] uppercase mb-4 mt-2 px-4">Dashboard Menu</h3>
               {[
                 { id: 'dashboard', label: 'Admin Dashboard', icon: <BarChart3 size={20}/> },
                 { id: 'products', label: 'Product Manager', icon: <Package size={20}/> }, 
@@ -475,16 +532,17 @@ const Admin = () => {
                 { id: 'flash', label: 'Flash Sale', icon: <Zap size={20}/> },
                 { id: 'settings', label: 'Global Settings', icon: <Edit size={20}/> },
                 { id: 'coupons', label: 'Coupons Manager', icon: <TagIcon size={20}/> },
+                { id: 'value_packs', label: 'Value Packs', icon: <Gift size={20}/> },
                 { id: 'media', label: 'Media Manager', icon: <ImageIcon size={20}/> },
 
               ].map((tab) => (
                 <button 
                   key={tab.id} 
                   onClick={() => setActiveTab(tab.id)} 
-                  className={`flex items-center justify-between w-full text-left px-5 py-4 rounded-2xl font-bold transition-all ${activeTab === tab.id ? 'bg-[var(--secondary)] text-white shadow-lg' : 'text-slate-300 hover:bg-slate-800'}`}
+                  className={`flex items-center justify-between gap-3 whitespace-nowrap md:whitespace-normal px-4 md:px-5 py-3 md:py-4 rounded-xl md:rounded-2xl font-bold transition-all flex-shrink-0 ${activeTab === tab.id ? 'bg-[var(--secondary)] text-white shadow-lg' : 'text-slate-300 hover:bg-slate-800'}`}
                 >
-                  <div className="flex items-center gap-3">{tab.icon} {tab.label}</div>
-                  {tab.badge > 0 && <span className="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full font-black">{tab.badge}</span>}
+                  <div className="flex items-center gap-2 md:gap-3 text-sm md:text-base">{tab.icon} <span className="md:inline">{tab.label}</span></div>
+                  {tab.badge > 0 && <span className="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full font-black ml-1">{tab.badge}</span>}
                 </button>
               ))}
            </div>
@@ -526,9 +584,9 @@ const Admin = () => {
                                </div>
                                <h4 className="text-[11px] font-black uppercase tracking-[0.1em] text-slate-400 mb-1">{s.label}</h4>
                                <p className="text-2xl font-black text-slate-900 mb-2">{s.value}</p>
-                               <p className="text-xs font-bold text-slate-500 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                               <div className="text-xs font-bold text-slate-500 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                                   <div className={`w-1.5 h-1.5 rounded-full bg-${s.color}-400`}></div> {s.detail}
-                               </p>
+                               </div>
                             </div>
                           ))}
                        </div>
@@ -587,6 +645,7 @@ const Admin = () => {
                            setSelectedCategoryId('');
                            setCustomerType('BOTH');
                            setB2bTiers([]); // Clear tiers for new product
+                            setProductVariants([]); // Clear variants for new product
                            setImageFiles([]);
                            setImagePreviews([]);
                            setIsProductModalOpen(true); 
@@ -616,7 +675,10 @@ const Admin = () => {
                                      <td className="p-5 flex items-center gap-4">
                                         <img src={imgSrc} alt={p.name} className="w-12 h-12 rounded-xl object-cover border border-gray-100 shadow-sm" />
                                         <div>
-                                           <p className="font-black text-slate-900">{p.name}</p>
+                                           <div className="flex items-center gap-2">
+                                              <p className="font-black text-slate-900">{p.name}</p>
+                                              {p.isBulkOnly && <span className="bg-amber-100 text-amber-700 text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-tighter">Bulk Only</span>}
+                                           </div>
                                            <p className="text-xs text-gray-500 font-bold">{p.unit} · {p.packagingSize || ''}</p>
                                         </div>
                                      </td>
@@ -649,7 +711,7 @@ const Admin = () => {
                                           
                                           // Initialize tiers from product data
                                           try {
-                                             setB2bTiers(p.b2bTiers ? JSON.parse(p.b2bTiers) : []);
+                                             setB2bTiers(p.b2bTiers ? JSON.parse(p.b2bTiers) : []); } catch (e) {} try { setProductVariants(p.variants ? (typeof p.variants === 'string' ? JSON.parse(p.variants) : p.variants) : []);
                                           } catch (e) {
                                              setB2bTiers([]);
                                           }
@@ -1268,6 +1330,24 @@ const Admin = () => {
                             </div>
                           </div>
 
+                          {/* Bulk Basket Deals Config */}
+                          <div className="bg-white p-6 border border-gray-100 rounded-[28px] shadow-sm ring-4 ring-indigo-50">
+                            <h3 className="font-black text-slate-800 mb-4 flex items-center gap-2">📦 Bulk Basket Deals (Volume Discount)</h3>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <label className="block text-sm font-black text-slate-700 mb-2 uppercase tracking-wide">Min Order for Discount (₹)</label>
+                                <input type="number" value={appSettings.bulkDiscountThreshold} onChange={e => setAppSettings({...appSettings, bulkDiscountThreshold: Number(e.target.value)})} className="w-full px-4 py-3 border-2 border-slate-100 rounded-xl focus:border-indigo-500 outline-none font-bold" />
+                                <p className="text-[10px] text-slate-400 mt-1 font-bold">Minimum subtotal in Bulk section to trigger discount</p>
+                              </div>
+                              <div>
+                                <label className="block text-sm font-black text-slate-700 mb-2 uppercase tracking-wide">Extra Discount Percentage (%)</label>
+                                <input type="number" step="0.1" value={appSettings.bulkDiscountPercentage} onChange={e => setAppSettings({...appSettings, bulkDiscountPercentage: Number(e.target.value)})} className="w-full px-4 py-3 border-2 border-slate-100 rounded-xl focus:border-indigo-500 outline-none font-bold" />
+                                <p className="text-[10px] text-slate-400 mt-1 font-bold">Additional percentage off for hitting threshold</p>
+                              </div>
+                            </div>
+                            <p className="text-xs text-slate-400 font-bold mt-3">💡 This applies only to items in the Bulk Basket section. Customers will see their progress toward this goal.</p>
+                          </div>
+
                           {/* Delivery Agent Payment Section */}
                           <div className="bg-white p-6 border border-gray-100 rounded-[28px] shadow-sm">
                             <h3 className="font-black text-slate-800 mb-4 flex items-center gap-2"><DollarSign size={18} className="text-emerald-500"/> Delivery Agent Pay Config</h3>
@@ -1289,6 +1369,159 @@ const Admin = () => {
                             <p className="text-xs text-slate-400 font-bold mt-3">💡 Incentives are applied every time an agent completes the specified number of orders.</p>
                           </div>
 
+
+                          {/* Checkout Dynamic Sections (Deals) */}
+                          <div className="bg-white p-6 border border-gray-100 rounded-[28px] shadow-sm ring-4 ring-purple-50">
+                            <h3 className="font-black text-slate-800 mb-1 flex items-center gap-2"><Sparkles size={18} className="text-purple-500" /> Checkout Dynamic Deals</h3>
+                            <p className="text-xs text-slate-400 font-bold mb-6 uppercase tracking-widest leading-relaxed">Create "Quick Add" sections that unlock when cart reaches a threshold. Great for ₹9 or ₹49 deals!</p>
+                            
+                            <div className="space-y-6">
+                              {(() => {
+                                let sections = [];
+                                try { sections = JSON.parse(appSettings.checkoutSections || '[]'); } catch {}
+                                
+                                return (
+                                  <>
+                                    {sections.map((sec, sIdx) => (
+                                      <div key={sec.id || sIdx} className="border-2 border-slate-100 rounded-[24px] p-5 bg-slate-50 relative group">
+                                        <button 
+                                          type="button" 
+                                          onClick={() => {
+                                            const updated = sections.filter((_, i) => i !== sIdx);
+                                            setAppSettings({...appSettings, checkoutSections: JSON.stringify(updated)});
+                                          }}
+                                          className="absolute -top-2 -right-2 bg-red-500 text-white p-1.5 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                                        >
+                                          <Plus className="rotate-45" size={14} />
+                                        </button>
+                                        
+                                        <div className="grid grid-cols-2 gap-4 mb-4">
+                                          <div>
+                                            <label className="text-[10px] font-black uppercase text-slate-400">Section Title</label>
+                                            <input 
+                                              className="w-full mt-1 p-3 rounded-xl bg-white border border-slate-200 font-bold text-sm" 
+                                              value={sec.title} 
+                                              onChange={e => {
+                                                const updated = [...sections];
+                                                updated[sIdx].title = e.target.value;
+                                                setAppSettings({...appSettings, checkoutSections: JSON.stringify(updated)});
+                                              }}
+                                              placeholder="e.g. ₹9 Flash Deals"
+                                            />
+                                          </div>
+                                          <div>
+                                            <label className="text-[10px] font-black uppercase text-slate-400">Unlock Threshold (₹)</label>
+                                            <input 
+                                              type="number"
+                                              className="w-full mt-1 p-3 rounded-xl bg-white border border-slate-200 font-bold text-sm" 
+                                              value={sec.minCartValue} 
+                                              onChange={e => {
+                                                const updated = [...sections];
+                                                updated[sIdx].minCartValue = Number(e.target.value);
+                                                setAppSettings({...appSettings, checkoutSections: JSON.stringify(updated)});
+                                              }}
+                                              placeholder="e.g. 500"
+                                            />
+                                          </div>
+                                        </div>
+
+                                        <div className="flex items-center gap-2 mb-3">
+                                           <input 
+                                              type="checkbox" 
+                                              checked={sec.isVisible} 
+                                              onChange={e => {
+                                                const updated = [...sections];
+                                                updated[sIdx].isVisible = e.target.checked;
+                                                setAppSettings({...appSettings, checkoutSections: JSON.stringify(updated)});
+                                              }}
+                                              className="w-4 h-4 accent-purple-600"
+                                           />
+                                           <span className="text-xs font-black text-slate-600">Visible in Checkout</span>
+                                        </div>
+
+                                        <div className="bg-white rounded-2xl p-4 border border-slate-100">
+                                           <p className="text-[10px] font-black uppercase text-slate-400 mb-3 tracking-widest">Custom Deal Items</p>
+                                           <div className="space-y-3">
+                                              {(sec.customItems || []).map((item, iIdx) => (
+                                                <div key={iIdx} className="flex gap-3 items-center bg-slate-50 p-2 rounded-xl border border-slate-100">
+                                                   <div className="w-10 h-10 rounded-lg overflow-hidden border border-slate-200 flex-shrink-0 bg-white">
+                                                      {item.image ? <img src={item.image} className="w-full h-full object-cover" /> : <div className="h-full flex items-center justify-center text-[10px]">🖼️</div>}
+                                                   </div>
+                                                   <div className="flex-1 min-w-0">
+                                                      <p className="text-[11px] font-black truncate">{item.name}</p>
+                                                      <p className="text-[10px] font-bold text-[var(--secondary)]">₹{item.price} <span className="text-slate-300 line-through">₹{item.oldPrice}</span></p>
+                                                   </div>
+                                                   <button 
+                                                      type="button" 
+                                                      onClick={() => {
+                                                        const updated = [...sections];
+                                                        updated[sIdx].customItems = updated[sIdx].customItems.filter((_, i) => i !== iIdx);
+                                                        setAppSettings({...appSettings, checkoutSections: JSON.stringify(updated)});
+                                                      }}
+                                                      className="text-red-300 hover:text-red-500"
+                                                   >
+                                                      <Trash size={14} />
+                                                   </button>
+                                                </div>
+                                              ))}
+                                              
+                                              {/* Add custom item form */}
+                                              <div className="mt-4 pt-4 border-t border-dashed border-slate-200">
+                                                 <div className="grid grid-cols-2 gap-2 mb-2">
+                                                    <input id={`new-item-name-${sIdx}`} placeholder="Item Name" className="p-2 rounded-lg border border-slate-200 text-[11px] font-bold" />
+                                                    <div className="flex gap-1">
+                                                       <input id={`new-item-price-${sIdx}`} type="number" placeholder="Deal ₹" className="w-16 p-2 rounded-lg border border-slate-200 text-[11px] font-bold" />
+                                                       <input id={`new-item-old-price-${sIdx}`} type="number" placeholder="MRP ₹" className="w-16 p-2 rounded-lg border border-slate-200 text-[11px] font-bold" />
+                                                    </div>
+                                                 </div>
+                                                 <div className="flex gap-2">
+                                                    <input id={`new-item-img-${sIdx}`} placeholder="Image URL (https://...)" className="flex-1 p-2 rounded-lg border border-slate-200 text-[11px] font-bold" />
+                                                    <button 
+                                                      type="button"
+                                                      onClick={() => {
+                                                        const name = document.getElementById(`new-item-name-${sIdx}`).value;
+                                                        const price = document.getElementById(`new-item-price-${sIdx}`).value;
+                                                        const oldPrice = document.getElementById(`new-item-old-price-${sIdx}`).value;
+                                                        const image = document.getElementById(`new-item-img-${sIdx}`).value;
+                                                        if (!name || !price) return alert('Name and Price are required');
+                                                        
+                                                        const updated = [...sections];
+                                                        if (!updated[sIdx].customItems) updated[sIdx].customItems = [];
+                                                        updated[sIdx].customItems.push({ id: 'c_' + Date.now(), name, price, oldPrice, image });
+                                                        setAppSettings({...appSettings, checkoutSections: JSON.stringify(updated)});
+                                                        
+                                                        // Clear inputs
+                                                        document.getElementById(`new-item-name-${sIdx}`).value = '';
+                                                        document.getElementById(`new-item-price-${sIdx}`).value = '';
+                                                        document.getElementById(`new-item-old-price-${sIdx}`).value = '';
+                                                        document.getElementById(`new-item-img-${sIdx}`).value = '';
+                                                      }}
+                                                      className="px-3 bg-purple-600 text-white rounded-lg font-black text-[10px]"
+                                                    >
+                                                      Add Item
+                                                    </button>
+                                                 </div>
+                                              </div>
+                                           </div>
+                                        </div>
+                                      </div>
+                                    ))}
+                                    
+                                    <button 
+                                      type="button" 
+                                      onClick={() => {
+                                        const newSec = { id: Date.now().toString(), title: 'New Deals', minCartValue: 500, isVisible: true, customItems: [] };
+                                        setAppSettings({...appSettings, checkoutSections: JSON.stringify([...sections, newSec])});
+                                      }}
+                                      className="w-full py-4 border-2 border-dashed border-purple-200 text-purple-600 rounded-2xl font-black text-sm hover:bg-purple-50 transition"
+                                    >
+                                      + Add New Deal Section
+                                    </button>
+                                  </>
+                                );
+                              })()}
+                            </div>
+                          </div>
 
                           {/* Razorpay Section */}
                           <div className="bg-white p-6 border border-gray-100 rounded-[28px] shadow-sm">
@@ -1492,6 +1725,84 @@ const Admin = () => {
                      </div>
                   )}
 
+                  {/* VALUE PACKS */}
+                  {activeTab === 'value_packs' && (
+                     <div className="animate-fade-in">
+                        <div className="flex justify-between items-end mb-8">
+                           <div>
+                             <h2 className="text-2xl font-black mb-2 text-slate-900">Value Packs / Monthly Stacks</h2>
+                             <p className="text-gray-500 font-medium">Create curated bundles of products at discounted prices.</p>
+                           </div>
+                           <button onClick={() => { setEditingValuePack(null); setPackItems([]); setIsValuePackModalOpen(true); }} className="bg-blue-600 text-white px-6 py-3 rounded-xl font-black text-sm shadow-lg flex items-center gap-2 hover:bg-blue-700 transition"><Plus size={18} /> New Value Pack</button>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                           {valuePacks.map(p => (
+                             <div key={p.id} className="bg-white border-2 border-slate-100 rounded-[32px] p-6 relative shadow-sm hover:shadow-md transition group">
+                                 <div className="relative h-40 rounded-2xl overflow-hidden mb-4 border border-slate-50">
+                                    <img src={p.image} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt={p.name} />
+                                    <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-md text-[var(--secondary)] font-black text-xs px-3 py-1 rounded-full shadow-sm border border-slate-100">
+                                       Save ₹{p.originalPrice - p.price}
+                                    </div>
+                                 </div>
+                                 <div className="flex justify-between items-start mb-2">
+                                    <h3 className="font-black text-lg text-slate-900 line-clamp-1">{p.name}</h3>
+                                    <span className={`text-[10px] uppercase font-black px-2 py-0.5 rounded-full ${p.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                       {p.isActive ? 'Active' : 'Inactive'}
+                                    </span>
+                                 </div>
+                                 <div className="flex items-baseline gap-2 mb-4">
+                                    <p className="font-black text-2xl text-slate-900">₹{p.price}</p>
+                                    <p className="text-sm text-slate-400 font-bold line-through">₹{p.originalPrice}</p>
+                                 </div>
+                                 
+                                 <div className="mb-6">
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
+                                       Contains {(() => {
+                                          try {
+                                             const items = typeof p.items === 'string' ? JSON.parse(p.items) : (p.items || []);
+                                             return items.length;
+                                          } catch(e) { return 0; }
+                                       })()} Items
+                                    </p>
+                                    <div className="flex flex-wrap gap-1.5">
+                                       {(() => {
+                                          try {
+                                             const items = typeof p.items === 'string' ? JSON.parse(p.items) : (p.items || []);
+                                             return items.slice(0, 3).map((item, idx) => (
+                                                <span key={idx} className="bg-slate-50 text-slate-600 text-[10px] font-bold px-2 py-1 rounded-lg border border-slate-100">{item.name} x{item.quantity}</span>
+                                             ));
+                                          } catch(e) { return null; }
+                                       })()}
+                                       {(() => {
+                                          try {
+                                             const items = typeof p.items === 'string' ? JSON.parse(p.items) : (p.items || []);
+                                             return items.length > 3 ? <span className="bg-slate-50 text-slate-400 text-[10px] font-bold px-2 py-1 rounded-lg border border-slate-100">+{items.length - 3} more</span> : null;
+                                          } catch(e) { return null; }
+                                       })()}
+                                    </div>
+                                 </div>
+
+                                 <div className="flex gap-2">
+                                    <button 
+                                      onClick={() => { 
+                                         setEditingValuePack(p); 
+                                         try {
+                                            const items = typeof p.items === 'string' ? JSON.parse(p.items) : (p.items || []);
+                                            setPackItems(items); 
+                                         } catch(e) { setPackItems([]); }
+                                         setIsValuePackModalOpen(true); 
+                                      }} 
+                                      className="flex-1 bg-slate-50 hover:bg-slate-100 text-slate-600 font-bold py-3 rounded-xl text-sm transition"
+                                    >Edit</button>
+                                    <button onClick={() => handleDeleteValuePack(p.id)} className="flex-1 bg-red-50 hover:bg-red-100 text-red-600 font-bold py-3 rounded-xl text-sm transition">Delete</button>
+                                 </div>
+                             </div>
+                           ))}
+                        </div>
+                     </div>
+                  )}
+
                   {/* COUPON MANAGER */}
                   {activeTab === 'coupons' && (
                      <div className="animate-fade-in">
@@ -1532,312 +1843,6 @@ const Admin = () => {
 
                   {/* MEDIA MANAGER */}
                   {activeTab === 'media' && (
-                     <div className="animate-fade-in space-y-8">
-                        <div>
-                          <h2 className="text-3xl font-black mb-2 text-slate-900 tracking-tight">Media Manager</h2>
-                          <p className="text-gray-500 font-medium">Upload and manage dynamic images across the platform.</p>
-                        </div>
-                        
-                        {/* Launch Popup Image */}
-                        <div className="bg-white p-6 border border-gray-100 rounded-[28px] shadow-sm">
-                           <div className="flex justify-between items-center mb-6">
-                             <div>
-                               <h3 className="font-black text-slate-800 text-lg">Launch Popup Image</h3>
-                               <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-widest">Image shown on website load</p>
-                             </div>
-                             <div className="relative overflow-hidden inline-block">
-                               <button className="bg-[var(--secondary)] text-white px-4 py-2 rounded-xl font-black text-sm flex items-center gap-2">
-                                 <Upload size={16} /> Upload Image
-                               </button>
-                               <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer"
-                                 onChange={async (e) => {
-                                   if (!e.target.files[0]) return;
-                                   try {
-                                      const url = await uploadImage(e.target.files[0]);
-                                      await updateSettings({ ...appSettings, launchPopupImage: url });
-                                      setAppSettings({ ...appSettings, launchPopupImage: url });
-                                      alert("Upload success");
-                                   } catch(err) { alert("Upload failed"); }
-                                 }}
-                               />
-                             </div>
-                           </div>
-                           {appSettings?.launchPopupImage ? (
-                             <div className="relative group w-64 rounded-2xl overflow-hidden border-2 border-slate-100">
-                               <img src={appSettings.launchPopupImage} className="w-full h-auto object-cover" alt="Launch popup" />
-                               <button onClick={async () => {
-                                  if(!window.confirm("Delete image?")) return;
-                                  await updateSettings({ ...appSettings, launchPopupImage: '' });
-                                  setAppSettings({ ...appSettings, launchPopupImage: '' });
-                               }} className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex justify-center items-center text-white transition-opacity">
-                                  <Trash size={24} />
-                               </button>
-                             </div>
-                           ) : (
-                             <div className="w-64 h-40 border-2 border-dashed border-slate-200 rounded-2xl flex items-center justify-center text-slate-400 font-bold uppercase tracking-widest text-xs">
-                               No Image Uploaded
-                             </div>
-                           )}
-                        </div>
-
-                        {/* Delivery Section Image */}
-                        <div className="bg-white p-6 border border-gray-100 rounded-[28px] shadow-sm">
-                           <div className="flex justify-between items-center mb-6">
-                             <div>
-                               <h3 className="font-black text-slate-800 text-lg">Delivery Trust Image</h3>
-                               <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-widest">Image shown in the Delivery Section</p>
-                             </div>
-                             <div className="relative overflow-hidden inline-block">
-                               <button className="bg-[var(--secondary)] text-white px-4 py-2 rounded-xl font-black text-sm flex items-center gap-2">
-                                 <Upload size={16} /> Upload Image
-                               </button>
-                               <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer"
-                                 onChange={async (e) => {
-                                   if (!e.target.files[0]) return;
-                                   try {
-                                      const url = await uploadImage(e.target.files[0]);
-                                      await updateSettings({ ...appSettings, deliverySectionImage: url });
-                                      setAppSettings({ ...appSettings, deliverySectionImage: url });
-                                      alert("Upload success");
-                                   } catch(err) { alert("Upload failed"); }
-                                 }}
-                               />
-                             </div>
-                           </div>
-                           {appSettings?.deliverySectionImage ? (
-                             <div className="relative group w-64 rounded-2xl overflow-hidden border-2 border-slate-100">
-                               <img src={appSettings.deliverySectionImage} className="w-full h-auto object-cover" alt="Delivery section" />
-                               <button onClick={async () => {
-                                  if(!window.confirm("Delete image?")) return;
-                                  await updateSettings({ ...appSettings, deliverySectionImage: '' });
-                                  setAppSettings({ ...appSettings, deliverySectionImage: '' });
-                               }} className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex justify-center items-center text-white transition-opacity">
-                                  <Trash size={24} />
-                               </button>
-                             </div>
-                           ) : (
-                             <div className="w-64 h-40 border-2 border-dashed border-slate-200 rounded-2xl flex items-center justify-center text-slate-400 font-bold uppercase tracking-widest text-xs">
-                               No Image Uploaded
-                             </div>
-                           )}
-                        </div>
-
-                        {/* Hero Carousel Manager */}
-                        <div className="bg-white p-6 border border-gray-100 rounded-[28px] shadow-sm">
-                           <div className="flex justify-between items-center mb-6">
-                             <div>
-                               <h3 className="font-black text-slate-800 text-lg">Hero Carousel Images</h3>
-                               <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-widest">Full-width auto-scrolling banners on Home</p>
-                             </div>
-                             <div className="relative overflow-hidden inline-block">
-                               <button className="bg-[var(--secondary)] text-white px-4 py-2 rounded-xl font-black text-sm flex items-center gap-2">
-                                 <Upload size={16} /> Add Image
-                               </button>
-                               <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer"
-                                 onChange={async (e) => {
-                                   if (!e.target.files[0]) return;
-                                   try {
-                                      const url = await uploadImage(e.target.files[0]);
-                                      let curr = [];
-                                      try { curr = JSON.parse(appSettings.heroImages || '[]'); } catch {}
-                                      curr.push({ id: Date.now().toString(), url });
-                                      await updateSettings({ ...appSettings, heroImages: JSON.stringify(curr) });
-                                      setAppSettings({ ...appSettings, heroImages: JSON.stringify(curr) });
-                                      alert("Upload success");
-                                   } catch(err) { alert("Upload failed"); }
-                                 }}
-                               />
-                             </div>
-                           </div>
-                           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                             {(() => {
-                               let imgs = [];
-                               try { imgs = JSON.parse(appSettings.heroImages || '[]'); } catch {}
-                               return imgs.map((img) => (
-                                 <div key={img.id} className="relative group rounded-2xl overflow-hidden border-2 border-slate-100" style={{aspectRatio: '16/9'}}>
-                                   <img src={img.url} className="w-full h-full object-cover" />
-                                   <button onClick={async () => {
-                                      if(!window.confirm("Delete image?")) return;
-                                      const updated = imgs.filter(i => i.id !== img.id);
-                                      await updateSettings({ ...appSettings, heroImages: JSON.stringify(updated) });
-                                      setAppSettings({ ...appSettings, heroImages: JSON.stringify(updated) });
-                                   }} className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex justify-center items-center text-white transition-opacity">
-                                      <Trash size={24} />
-                                   </button>
-                                 </div>
-                               ));
-                             })()}
-                           </div>
-                        </div>
-
-                        {/* Promo Cards Manager */}
-                        <div className="bg-white p-6 border border-gray-100 rounded-[28px] shadow-sm">
-                           <div className="flex justify-between items-center mb-6">
-                             <div>
-                               <h3 className="font-black text-slate-800 text-lg">Promo Cards (Max 4)</h3>
-                               <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-widest">Small cards shown below Flash Sale</p>
-                             </div>
-                             <div className="relative overflow-hidden inline-block">
-                               <button className="bg-[var(--secondary)] text-white px-4 py-2 rounded-xl font-black text-sm flex items-center gap-2">
-                                 <Upload size={16} /> Add Card
-                               </button>
-                               <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer"
-                                 onChange={async (e) => {
-                                   if (!e.target.files[0]) return;
-                                   let curr = [];
-                                   try { curr = JSON.parse(appSettings.homePromoCards || '[]'); } catch {}
-                                   if (curr.length >= 4) return alert("Maximum 4 cards allowed.");
-                                   try {
-                                      const url = await uploadImage(e.target.files[0]);
-                                      curr.push({ id: Date.now().toString(), url });
-                                      await updateSettings({ ...appSettings, homePromoCards: JSON.stringify(curr) });
-                                      setAppSettings({ ...appSettings, homePromoCards: JSON.stringify(curr) });
-                                      alert("Upload success");
-                                   } catch(err) { alert("Upload failed"); }
-                                 }}
-                               />
-                             </div>
-                           </div>
-                           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                             {(() => {
-                               let cards = [];
-                               try { cards = JSON.parse(appSettings.homePromoCards || '[]'); } catch {}
-                               return cards.map((card) => (
-                                 <div key={card.id} className="relative group rounded-2xl overflow-hidden border-2 border-slate-100" style={{aspectRatio: '3/2'}}>
-                                   <img src={card.url} className="w-full h-full object-cover" />
-                                   <button onClick={async () => {
-                                      if(!window.confirm("Delete card?")) return;
-                                      const updated = cards.filter(i => i.id !== card.id);
-                                      await updateSettings({ ...appSettings, homePromoCards: JSON.stringify(updated) });
-                                      setAppSettings({ ...appSettings, homePromoCards: JSON.stringify(updated) });
-                                   }} className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex justify-center items-center text-white transition-opacity">
-                                      <Trash size={24} />
-                                   </button>
-                                 </div>
-                               ));
-                             })()}
-                           </div>
-                        </div>
-
-                     </div>
-                  )}
-                </>
-              )}
-           </div>
-        </div>
-      </div>
-
-      {/* Product Modal */}
-      {isProductModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <form 
-            key={editingProduct?.id || 'new'} 
-            onSubmit={handleSaveProduct} 
-            className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl animate-fade-up"
-          >
-            <div className="p-8 border-b flex justify-between items-center bg-slate-900 text-white rounded-t-3xl">
-               <h2 className="text-2xl font-black">{editingProduct ? 'Edit Product' : 'Create New Product'}</h2>
-               <button type="button" onClick={() => setIsProductModalOpen(false)} className="text-white/60 hover:text-white bg-white/10 p-2 rounded-full">X</button>
-            </div>
-            <div className="p-8 space-y-6">
-               <div className="grid grid-cols-2 gap-6">
-                 <div>
-                   <label className="block text-sm font-black text-slate-700 mb-2 uppercase tracking-wide">Product Name</label>
-                   <input required name="name" defaultValue={editingProduct?.name} className="w-full px-5 py-4 border-2 border-slate-100 rounded-xl focus:border-[var(--secondary)] outline-none font-bold text-slate-900" />
-                 </div>
-                                   <div>
-                    <label className="block text-sm font-black text-slate-700 mb-2 uppercase tracking-wide">Product Images (Multiple)</label>
-                    <div className="flex flex-col gap-3">
-                       <div className="flex flex-wrap gap-2 mb-1">
-                          {imagePreviews.length > 0 ? (
-                             imagePreviews.map((prev, idx) => (
-                                <div key={idx} className="relative w-20 h-20 rounded-xl overflow-hidden border-2 border-slate-100 group">
-                                   <img src={prev} className="w-full h-full object-cover" />
-                                   <button 
-                                      type="button" 
-                                      onClick={() => {
-                                         setImageFiles(imageFiles.filter((_, i) => i !== idx));
-                                         setImagePreviews(imagePreviews.filter((_, i) => i !== idx));
-                                      }}
-                                      className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white"
-                                   >
-                                      <Trash size={14} />
-                                   </button>
-                                </div>
-                             ))
-                          ) : editingProduct?.images ? (
-                             (() => {
-                                try {
-                                   const imgs = JSON.parse(editingProduct.images);
-                                   return imgs.map((img, idx) => (
-                                      <div key={idx} className="w-20 h-20 rounded-xl overflow-hidden border-2 border-slate-100">
-                                         <img src={img} className="w-full h-full object-cover" alt="product" />
-                                      </div>
-                                   ));
-                                } catch (e) { return null; }
-                             })()
-                          ) : (
-                             <div className="w-full h-20 rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-300">
-                                <Plus size={20} />
-                                <span className="text-[10px] font-black uppercase tracking-widest ml-2">No Images</span>
-                             </div>
-                          )}
-                       </div>
-                       <div className="flex gap-2">
-                          <input 
-                             type="file" 
-                             id="productImages"
-                             multiple
-                             accept="image/*"
-                             onChange={(e) => {
-                                const files = Array.from(e.target.files);
-                                if (files.length > 0) {
-                                   setImageFiles([...imageFiles, ...files]);
-                                   setImagePreviews([...imagePreviews, ...files.map(f => URL.createObjectURL(f))]);
-                                }
-                             }}
-                             className="hidden" 
-                          />
-                          <label htmlFor="productImages" className="flex-1 text-center py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-black text-[10px] cursor-pointer uppercase tracking-wider">
-                             Add Images
-                          </label>
-                          <input name="image" className="flex-1 px-4 py-2 bg-slate-50 border-2 border-slate-100 rounded-xl focus:border-[var(--secondary)] outline-none font-bold text-[10px]" placeholder="Or URL..." />
-                       </div>
-                    </div>
-                  </div>
-               </div>
-               <div>
-                  <label className="block text-sm font-black text-slate-700 mb-2 uppercase tracking-wide">Product Description</label>
-                  <textarea name="description" defaultValue={editingProduct?.description} rows="3" className="w-full px-5 py-4 border-2 border-slate-100 rounded-xl focus:border-[var(--secondary)] outline-none font-bold text-slate-900 resize-none"></textarea>
-               </div>
-               <div className="grid grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-black text-slate-700 mb-2 uppercase tracking-wide">Category</label>
-                    <select required name="categoryId" value={selectedCategoryId} onChange={(e) => setSelectedCategoryId(e.target.value)} className="w-full px-5 py-4 border-2 border-slate-100 rounded-xl focus:border-[var(--secondary)] outline-none font-bold bg-white text-slate-900">
-                      <option value="">Select Category</option>
-                      {categories.map(cat => (
-                        <option key={cat.id} value={cat.id}>{cat.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-black text-slate-700 mb-2 uppercase tracking-wide">Sub Category</label>
-                    <select 
-                      name="subCategoryId" 
-                      defaultValue={editingProduct?.subCategoryId || ''}
-                      required={categories.find(c => c.id === selectedCategoryId)?.subcategories?.length > 0}
-                      className="w-full px-5 py-4 border-2 border-slate-100 rounded-xl focus:border-[var(--secondary)] outline-none font-bold bg-white text-slate-900"
-                    >
-                      {categories.find(c => c.id === selectedCategoryId) ? (
-                        categories.find(c => c.id === selectedCategoryId).subcategories?.length > 0 ? (
-                          <>
-                            <option value="">Select Sub Category</option>
-                            {categories.find(c => c.id === selectedCategoryId).subcategories.map(sub => (
-                              <option key={sub.id} value={sub.id}>{sub.name}</option>
-                            ))}
-         
-                   {/* MEDIA MANAGER */}
-                   {activeTab === 'media' && (
                      <div className="animate-fade-in">
                        <div className="mb-8">
                          <h2 className="text-2xl font-black mb-2 text-slate-900">Media Manager</h2>
@@ -2063,7 +2068,121 @@ const Admin = () => {
                    )}
 
                  </>
-                        ) : <option value="">No</option>
+              )}
+           </div>
+        </div>
+      </div>
+
+      {/* Product Modal */}
+      {isProductModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <form 
+            key={editingProduct?.id || 'new'} 
+            onSubmit={handleSaveProduct} 
+            className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl animate-fade-up"
+          >
+            <div className="p-8 border-b flex justify-between items-center bg-slate-900 text-white rounded-t-3xl">
+               <h2 className="text-2xl font-black">{editingProduct ? 'Edit Product' : 'Create New Product'}</h2>
+               <button type="button" onClick={() => setIsProductModalOpen(false)} className="text-white/60 hover:text-white bg-white/10 p-2 rounded-full">X</button>
+            </div>
+            <div className="p-8 space-y-6">
+               <div className="grid grid-cols-2 gap-6">
+                 <div>
+                   <label className="block text-sm font-black text-slate-700 mb-2 uppercase tracking-wide">Product Name</label>
+                   <input required name="name" defaultValue={editingProduct?.name} className="w-full px-5 py-4 border-2 border-slate-100 rounded-xl focus:border-[var(--secondary)] outline-none font-bold text-slate-900" />
+                 </div>
+                 <div>
+                    <label className="block text-sm font-black text-slate-700 mb-2 uppercase tracking-wide">Product Images (Multiple)</label>
+                    <div className="flex flex-col gap-3">
+                       <div className="flex flex-wrap gap-2 mb-1">
+                          {imagePreviews.length > 0 ? (
+                             imagePreviews.map((prev, idx) => (
+                                <div key={idx} className="relative w-20 h-20 rounded-xl overflow-hidden border-2 border-slate-100 group">
+                                   <img src={prev} className="w-full h-full object-cover" />
+                                   <button 
+                                      type="button" 
+                                      onClick={() => {
+                                         setImageFiles(imageFiles.filter((_, i) => i !== idx));
+                                         setImagePreviews(imagePreviews.filter((_, i) => i !== idx));
+                                      }}
+                                      className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white"
+                                   >
+                                      <Trash size={14} />
+                                   </button>
+                                </div>
+                             ))
+                          ) : editingProduct?.images ? (
+                             (() => {
+                                try {
+                                   const imgs = JSON.parse(editingProduct.images);
+                                   return imgs.map((img, idx) => (
+                                      <div key={idx} className="w-20 h-20 rounded-xl overflow-hidden border-2 border-slate-100">
+                                         <img src={img} className="w-full h-full object-cover" alt="product" />
+                                      </div>
+                                   ));
+                                } catch (e) { return null; }
+                             })()
+                          ) : (
+                             <div className="w-full h-20 rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-300">
+                                <Plus size={20} />
+                                <span className="text-[10px] font-black uppercase tracking-widest ml-2">No Images</span>
+                             </div>
+                          )}
+                       </div>
+                       <div className="flex gap-2">
+                          <input 
+                             type="file" 
+                             id="productImages"
+                             multiple
+                             accept="image/*"
+                             onChange={(e) => {
+                                const files = Array.from(e.target.files);
+                                if (files.length > 0) {
+                                   setImageFiles([...imageFiles, ...files]);
+                                   setImagePreviews([...imagePreviews, ...files.map(f => URL.createObjectURL(f))]);
+                                }
+                             }}
+                             className="hidden" 
+                          />
+                          <label htmlFor="productImages" className="flex-1 text-center py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-black text-[10px] cursor-pointer uppercase tracking-wider">
+                             Add Images
+                          </label>
+                          <input name="image" className="flex-1 px-4 py-2 bg-slate-50 border-2 border-slate-100 rounded-xl focus:border-[var(--secondary)] outline-none font-bold text-[10px]" placeholder="Or URL..." />
+                       </div>
+                    </div>
+                  </div>
+               </div>
+               <div>
+                  <label className="block text-sm font-black text-slate-700 mb-2 uppercase tracking-wide">Product Description</label>
+                  <textarea name="description" defaultValue={editingProduct?.description} rows="3" className="w-full px-5 py-4 border-2 border-slate-100 rounded-xl focus:border-[var(--secondary)] outline-none font-bold text-slate-900 resize-none"></textarea>
+               </div>
+               <div className="grid grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-black text-slate-700 mb-2 uppercase tracking-wide">Category</label>
+                    <select required name="categoryId" value={selectedCategoryId} onChange={(e) => setSelectedCategoryId(e.target.value)} className="w-full px-5 py-4 border-2 border-slate-100 rounded-xl focus:border-[var(--secondary)] outline-none font-bold bg-white text-slate-900">
+                      <option value="">Select Category</option>
+                      {categories.map(cat => (
+                        <option key={cat.id} value={cat.id}>{cat.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-black text-slate-700 mb-2 uppercase tracking-wide">Sub Category</label>
+                    <select 
+                      name="subCategoryId" 
+                      defaultValue={editingProduct?.subCategoryId || ''}
+                      required={categories.find(c => c.id === selectedCategoryId)?.subcategories?.length > 0}
+                      className="w-full px-5 py-4 border-2 border-slate-100 rounded-xl focus:border-[var(--secondary)] outline-none font-bold bg-white text-slate-900"
+                    >
+                      {categories.find(c => c.id === selectedCategoryId) ? (
+                        categories.find(c => c.id === selectedCategoryId).subcategories?.length > 0 ? (
+                          <>
+                            <option value="">Select Sub Category</option>
+                            {categories.find(c => c.id === selectedCategoryId).subcategories.map(sub => (
+                              <option key={sub.id} value={sub.id}>{sub.name}</option>
+                            ))}
+                          </>
+                        ) : <option value="">No subcategories</option>
                       ) : <option value="">First select category</option>}
                     </select>
                   </div>
@@ -2201,6 +2320,161 @@ const Admin = () => {
                   </div>
                )}
 
+               {/* MULTI-VARIANT PACKAGING MANAGER */}
+               <div className="flex flex-col gap-6 p-6 bg-purple-50/60 rounded-2xl border-2 border-purple-100">
+                 <div className="flex justify-between items-center bg-purple-950 text-white px-5 py-4 rounded-2xl shadow-sm">
+                    <div className="flex items-center gap-2">
+                       <LayoutGrid size={18} className="text-purple-300 animate-pulse" />
+                       <span className="text-xs font-black uppercase tracking-widest">Multi-Variant Packaging & Sizes</span>
+                    </div>
+                    <button 
+                      type="button" 
+                      onClick={() => setProductVariants([...productVariants, { id: 'v_' + Date.now() + Math.random().toString(36).substr(2, 5), size: '', b2cOldPrice: '', b2cNewPrice: '', b2bOldPrice: '', b2bNewPrice: '', stock: 100, minB2BQty: 1 }])}
+                      className="bg-purple-700 hover:bg-purple-600 text-white text-[10px] font-black px-4 py-2 rounded-xl flex items-center gap-1.5 transition-all shadow-md active:scale-95"
+                    >
+                      <Plus size={14} /> Add Packaging Variant
+                    </button>
+                 </div>
+                 
+                 <div className="space-y-4 max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
+                    {productVariants.length === 0 && (
+                       <div className="text-center py-8 border-2 border-dashed border-purple-200 rounded-2xl bg-white/50">
+                          <p className="text-xs text-purple-400 font-black uppercase tracking-widest">No packaging variants configured</p>
+                          <p className="text-[10px] text-slate-400 mt-1 font-bold">Configure multiple weights, sizes, or bundle quantities under the same product.</p>
+                       </div>
+                    )}
+                    
+                    {productVariants.map((v, idx) => (
+                       <div key={v.id || idx} className="bg-white p-4 rounded-2xl border border-purple-100 shadow-sm relative space-y-4 animate-fade-in text-slate-950">
+                          <button 
+                             type="button"
+                             onClick={() => setProductVariants(productVariants.filter((_, i) => i !== idx))}
+                             className="absolute top-4 right-4 p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                          >
+                             <Trash size={16} />
+                          </button>
+                          
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                             <div className="col-span-2">
+                                <label className="block text-[9px] font-black text-purple-700 uppercase ml-1">Variant Size / Weight (e.g. 500g, 1kg, Pack of 6)</label>
+                                <input 
+                                   required
+                                   type="text" 
+                                   placeholder="e.g. 1kg" 
+                                   value={v.size || ''} 
+                                   onChange={(e) => {
+                                      const updated = [...productVariants];
+                                      updated[idx].size = e.target.value;
+                                      setProductVariants(updated);
+                                   }}
+                                   className="w-full mt-1 px-3 py-2 bg-slate-50 border-2 border-slate-100 rounded-lg text-sm font-bold focus:border-purple-500 outline-none transition text-slate-900"
+                                />
+                             </div>
+                             <div>
+                                <label className="block text-[9px] font-black text-purple-700 uppercase ml-1">Stock</label>
+                                <input 
+                                   type="number" 
+                                   placeholder="100" 
+                                   value={v.stock ?? 100} 
+                                   onChange={(e) => {
+                                      const updated = [...productVariants];
+                                      updated[idx].stock = Number(e.target.value);
+                                      setProductVariants(updated);
+                                   }}
+                                   className="w-full mt-1 px-3 py-2 bg-slate-50 border-2 border-slate-100 rounded-lg text-sm font-bold focus:border-purple-500 outline-none transition text-slate-900"
+                                />
+                             </div>
+                             <div>
+                                <label className="block text-[9px] font-black text-purple-700 uppercase ml-1">Min B2B Qty</label>
+                                <input 
+                                   type="number" 
+                                   placeholder="1" 
+                                   value={v.minB2BQty ?? 1} 
+                                   onChange={(e) => {
+                                      const updated = [...productVariants];
+                                      updated[idx].minB2BQty = Number(e.target.value);
+                                      setProductVariants(updated);
+                                   }}
+                                   className="w-full mt-1 px-3 py-2 bg-slate-50 border-2 border-slate-100 rounded-lg text-sm font-bold focus:border-purple-500 outline-none transition text-slate-900"
+                                />
+                             </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-2 border-t border-dashed border-slate-100">
+                             <div>
+                                <label className="block text-[9px] font-black text-emerald-600 uppercase ml-1">B2C Old Price (₹)</label>
+                                <input 
+                                   type="number" 
+                                   step="0.01"
+                                   placeholder="MRP" 
+                                   value={v.b2cOldPrice ?? ''} 
+                                   onChange={(e) => {
+                                      const updated = [...productVariants];
+                                      updated[idx].b2cOldPrice = e.target.value === '' ? '' : Number(e.target.value);
+                                      setProductVariants(updated);
+                                   }}
+                                   className="w-full mt-1 px-3 py-2 bg-slate-50 border-2 border-slate-100 rounded-lg text-sm font-bold focus:border-emerald-500 outline-none transition text-slate-900"
+                                />
+                             </div>
+                             <div>
+                                <label className="block text-[9px] font-black text-emerald-600 uppercase ml-1">B2C New Price (₹)</label>
+                                <input 
+                                   type="number" 
+                                   step="0.01"
+                                   placeholder="Offer Price" 
+                                   value={v.b2cNewPrice ?? ''} 
+                                   onChange={(e) => {
+                                      const updated = [...productVariants];
+                                      updated[idx].b2cNewPrice = e.target.value === '' ? '' : Number(e.target.value);
+                                      setProductVariants(updated);
+                                   }}
+                                   className="w-full mt-1 px-3 py-2 bg-slate-50 border-2 border-slate-100 rounded-lg text-sm font-bold focus:border-emerald-500 outline-none transition text-slate-900"
+                                />
+                             </div>
+                             {(customerType === 'BOTH' || customerType === 'BUSINESS') && (
+                                <>
+                                   <div>
+                                      <label className="block text-[9px] font-black text-indigo-600 uppercase ml-1">B2B Reference (₹)</label>
+                                      <input 
+                                         type="number" 
+                                         step="0.01"
+                                         placeholder="Retail Price" 
+                                         value={v.b2bOldPrice ?? ''} 
+                                         onChange={(e) => {
+                                            const updated = [...productVariants];
+                                            updated[idx].b2bOldPrice = e.target.value === '' ? '' : Number(e.target.value);
+                                            setProductVariants(updated);
+                                         }}
+                                         className="w-full mt-1 px-3 py-2 bg-slate-50 border-2 border-slate-100 rounded-lg text-sm font-bold focus:border-indigo-500 outline-none transition text-slate-900"
+                                      />
+                                   </div>
+                                   <div>
+                                      <label className="block text-[9px] font-black text-indigo-600 uppercase ml-1">B2B Wholesale Price (₹)</label>
+                                      <input 
+                                         type="number" 
+                                         step="0.01"
+                                         placeholder="Wholesale" 
+                                         value={v.b2bNewPrice ?? ''} 
+                                         onChange={(e) => {
+                                            const updated = [...productVariants];
+                                            updated[idx].b2bNewPrice = e.target.value === '' ? '' : Number(e.target.value);
+                                            setProductVariants(updated);
+                                         }}
+                                         className="w-full mt-1 px-3 py-2 bg-slate-50 border-2 border-slate-100 rounded-lg text-sm font-bold focus:border-indigo-500 outline-none transition text-slate-900"
+                                      />
+                                   </div>
+                                </>
+                             )}
+                          </div>
+                       </div>
+                    ))}
+                 </div>
+                 
+                 <p className="text-[10px] text-purple-600 font-bold italic px-2">
+                    Note: If variants are configured, the dropdown selector will automatically appear on the storefront.
+                 </p>
+               </div>
+
                <div className="grid grid-cols-2 gap-6">
                  <div>
                    <label className="block text-sm font-black text-slate-700 mb-2 uppercase tracking-wide">Assign to Particular Store (Optional)</label>
@@ -2217,10 +2491,17 @@ const Admin = () => {
                  </div>
                </div>
 
-               <div className="flex items-center gap-3">
-                  <input type="checkbox" name="isFlashSale" id="flashSale" defaultChecked={editingProduct?.isFlashSale} className="w-5 h-5 accent-[var(--secondary)]" />
-                  <label htmlFor="flashSale" className="font-black cursor-pointer">Feature in Flash Sale</label>
-               </div>
+               <div className="flex flex-wrap gap-6 p-6 bg-slate-50 rounded-3xl border border-slate-100">
+                   <div className="flex items-center gap-3">
+                      <input type="checkbox" name="isFlashSale" id="flashSale" defaultChecked={editingProduct?.isFlashSale} className="w-5 h-5 accent-[var(--secondary)]" />
+                      <label htmlFor="flashSale" className="font-black cursor-pointer text-sm">Feature in Flash Sale</label>
+                   </div>
+                   <div className="flex items-center gap-3">
+                      <input type="checkbox" name="isBulkOnly" id="isBulkOnly" defaultChecked={editingProduct?.isBulkOnly} className="w-5 h-5 accent-amber-500" />
+                      <label htmlFor="isBulkOnly" className="font-black cursor-pointer text-sm text-amber-700">📦 Mark as Bulk Only</label>
+                   </div>
+                </div>
+
             </div>
             <div className="p-8 bg-slate-50 border-t rounded-b-3xl flex justify-end gap-4">
                <button type="button" onClick={() => setIsProductModalOpen(false)} className="px-8 py-4 font-black text-slate-600">Cancel</button>
@@ -2338,9 +2619,9 @@ const Admin = () => {
                </div>
                <div className="flex items-center gap-3 p-4 bg-green-50 rounded-xl border border-green-100">
                  <input type="checkbox" name="isVegetable" id="isVegetableNew" defaultChecked={editingCategory?.isVegetable} className="w-5 h-5 accent-green-600" />
-                 <label htmlFor="isVegetableNew" className="cursor-pointer">
-                   <p className="font-black text-green-800 text-sm">🥦 Mark as Vegetable Category</p>
-                   <p className="text-xs text-green-600 font-medium">Products in this category will have slot-based delivery options</p>
+                 <label htmlFor="isVegetableNew" className="cursor-pointer block">
+                   <span className="font-black text-green-800 text-sm block">🥦 Mark as Vegetable Category</span>
+                   <span className="text-xs text-green-600 font-medium block">Products in this category will have slot-based delivery options</span>
                  </label>
                </div>
             </div>
@@ -2401,6 +2682,190 @@ const Admin = () => {
                <button type="submit" className="bg-slate-900 text-white px-8 py-3 rounded-xl font-black shadow-lg">Create Agent</button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* Value Pack Modal */}
+      {isValuePackModalOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+          <div className="bg-white rounded-[32px] p-8 w-full max-w-2xl shadow-2xl animate-fade-in max-h-[95vh] overflow-y-auto border border-white">
+             <div className="flex justify-between items-center mb-6">
+                <h3 className="text-2xl font-black text-slate-900">{editingValuePack ? 'Edit Value Pack' : 'New Value Pack'}</h3>
+                <button onClick={() => setIsValuePackModalOpen(false)} className="text-slate-400 hover:text-slate-600 transition"><Plus className="rotate-45" size={28} /></button>
+             </div>
+             
+             <form onSubmit={handleSaveValuePack} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                   <div className="space-y-4">
+                      <div>
+                        <label className="text-xs font-black uppercase text-slate-400 tracking-wider">Pack Name</label>
+                        <input required name="name" defaultValue={editingValuePack?.name} placeholder="e.g. Monthly Grocery Stack" className="w-full mt-1 p-4 rounded-2xl bg-slate-50 border-2 border-slate-100 outline-none font-bold focus:border-blue-400 transition" />
+                      </div>
+                      <div>
+                        <label className="text-xs font-black uppercase text-slate-400 tracking-wider">Description</label>
+                        <textarea name="description" defaultValue={editingValuePack?.description} placeholder="What's in this pack?" className="w-full mt-1 p-4 rounded-2xl bg-slate-50 border-2 border-slate-100 outline-none font-bold focus:border-blue-400 transition h-24" />
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                         <div>
+                           <label className="text-xs font-black uppercase text-slate-400 tracking-wider">Bundle Price (₹)</label>
+                           <input type="number" value={packItems.reduce((sum, item) => sum + (Number(item.price || 0) * item.quantity), 0)} readOnly className="w-full mt-1 p-4 rounded-2xl bg-slate-100 border-2 border-slate-100 outline-none font-black text-blue-600 cursor-not-allowed" />
+                           <p className="text-[9px] text-blue-500 font-bold mt-1 uppercase tracking-widest">Auto-calculated from items</p>
+                         </div>
+                         <div>
+                           <label className="text-xs font-black uppercase text-slate-400 tracking-wider">Original Total (₹)</label>
+                           <input type="number" value={packItems.reduce((sum, item) => sum + (Number(item.previousPrice || item.price || 0) * item.quantity), 0)} readOnly className="w-full mt-1 p-4 rounded-2xl bg-slate-100 border-2 border-slate-100 outline-none font-black text-slate-500 cursor-not-allowed" />
+                           <p className="text-[9px] text-slate-400 font-bold mt-1 uppercase tracking-widest">Sum of previous prices</p>
+                         </div>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                         <div>
+                           <label className="text-xs font-black uppercase text-slate-400 tracking-wider">Stock</label>
+                           <input required type="number" name="stock" defaultValue={editingValuePack?.stock || 100} className="w-full mt-1 p-4 rounded-2xl bg-slate-50 border-2 border-slate-100 outline-none font-bold" />
+                         </div>
+                         <div>
+                           <label className="text-xs font-black uppercase text-slate-400 tracking-wider">Status</label>
+                           <select name="isActive" defaultValue={editingValuePack?.isActive ? 'true' : 'false'} className="w-full mt-1 p-4 rounded-2xl bg-slate-50 border-2 border-slate-100 outline-none font-bold">
+                              <option value="true">Active</option>
+                              <option value="false">Inactive</option>
+                           </select>
+                         </div>
+                      </div>
+                      <div>
+                        <label className="text-xs font-black uppercase text-slate-400 tracking-wider">Pack Image (URL)</label>
+                        <div className="flex gap-2">
+                           <input id="packImageInput" name="image" defaultValue={editingValuePack?.image} placeholder="https://..." className="flex-1 mt-1 p-4 rounded-2xl bg-slate-50 border-2 border-slate-100 outline-none font-bold focus:border-blue-400 transition" />
+                           <div className="relative inline-block mt-1">
+                              <button type="button" className="h-full bg-slate-100 px-4 rounded-2xl font-black text-xs text-slate-500 uppercase hover:bg-slate-200 transition">Upload</button>
+                              <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" 
+                                onChange={async (e) => {
+                                   if(!e.target.files[0]) return;
+                                   const url = await uploadImage(e.target.files[0]);
+                                   document.getElementById('packImageInput').value = url;
+                                }}
+                              />
+                           </div>
+                        </div>
+                      </div>
+                   </div>
+
+                   <div className="bg-slate-50 rounded-3xl p-6 border-2 border-slate-100 flex flex-col h-full">
+                      <h4 className="text-sm font-black uppercase text-slate-400 mb-4 tracking-widest flex items-center gap-2"><Disc size={16}/> Included Products</h4>
+                      
+                      <div className="mb-4">
+                         <select 
+                           className="w-full p-3 rounded-xl bg-white border-2 border-slate-100 outline-none font-bold text-sm"
+                           onChange={(e) => {
+                              const pId = e.target.value;
+                              if (!pId) return;
+                              const p = products.find(x => x.id === pId);
+                              if (p) {
+                                 setPackItems(prev => {
+                                    const existing = prev.find(i => i.productId === p.id);
+                                    if (existing) return prev;
+                                    return [...prev, { 
+                                       productId: p.id, 
+                                       name: p.name, 
+                                       price: p.b2cNewPrice || p.price, 
+                                       previousPrice: p.b2cOldPrice || p.b2cNewPrice || p.price,
+                                       quantity: 1, 
+                                       unit: p.unit 
+                                    }];
+                                 });
+                              }
+                              e.target.value = "";
+                           }}
+                         >
+                            <option value="">+ Add Product to Pack</option>
+                            {products.filter(p => !p.isBulkOnly).map(p => (
+                               <option key={p.id} value={p.id}>{p.name} (₹{p.b2cNewPrice || p.price})</option>
+                            ))}
+                         </select>
+                      </div>
+
+                      <div className="flex-grow space-y-3 overflow-y-auto max-h-[300px] pr-2">
+                         {Array.isArray(packItems) && packItems.map((item, idx) => (
+                            <div key={idx} className="bg-white p-4 rounded-3xl shadow-sm border border-slate-100 flex flex-col gap-4 group transition-all hover:border-blue-200">
+                               <div className="flex items-center justify-between">
+                                  <div className="flex-grow min-w-0 mr-3">
+                                     <p className="font-black text-slate-800 text-sm truncate">{item.name}</p>
+                                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{item.unit}</p>
+                                  </div>
+                                  <button type="button" onClick={() => setPackItems(prev => prev.filter((_, i) => i !== idx))} className="text-red-300 hover:text-red-500 transition"><Trash size={16}/></button>
+                               </div>
+                               
+                               <div className="grid grid-cols-2 gap-3">
+                                  <div>
+                                     <label className="text-[9px] font-black text-slate-400 uppercase ml-1">Pack Price (₹)</label>
+                                     <input 
+                                        type="number" 
+                                        value={item.price} 
+                                        onChange={(e) => {
+                                           const newItems = [...packItems];
+                                           newItems[idx].price = Number(e.target.value);
+                                           setPackItems(newItems);
+                                        }}
+                                        className="w-full px-3 py-2 bg-slate-50 border-2 border-slate-100 rounded-xl text-xs font-black focus:border-blue-400 outline-none transition"
+                                     />
+                                  </div>
+                                  <div>
+                                     <label className="text-[9px] font-black text-slate-400 uppercase ml-1">Prev Price (₹)</label>
+                                     <input 
+                                        type="number" 
+                                        value={item.previousPrice || item.price} 
+                                        onChange={(e) => {
+                                           const newItems = [...packItems];
+                                           newItems[idx].previousPrice = Number(e.target.value);
+                                           setPackItems(newItems);
+                                        }}
+                                        className="w-full px-3 py-2 bg-slate-50 border-2 border-slate-100 rounded-xl text-xs font-bold text-slate-500 focus:border-slate-300 outline-none transition"
+                                     />
+                                  </div>
+                               </div>
+
+                               <div className="flex items-center justify-between pt-1">
+                                  <div className="flex items-center bg-slate-50 rounded-xl p-1 border border-slate-100">
+                                     <button type="button" onClick={() => {
+                                        setPackItems(prev => prev.map((it, i) => i === idx ? {...it, quantity: Math.max(1, it.quantity - 1)} : it));
+                                     }} className="w-8 h-8 flex items-center justify-center font-black text-slate-400 hover:text-slate-600 transition">-</button>
+                                     <span className="w-8 text-center font-black text-slate-700 text-xs">{item.quantity}</span>
+                                     <button type="button" onClick={() => {
+                                        setPackItems(prev => prev.map((it, i) => i === idx ? {...it, quantity: it.quantity + 1} : it));
+                                     }} className="w-8 h-8 flex items-center justify-center font-black text-slate-400 hover:text-slate-600 transition">+</button>
+                                  </div>
+                                  <div className="text-right">
+                                     <p className="text-[9px] font-black text-slate-400 uppercase">Item Total</p>
+                                     <p className="text-sm font-black text-slate-900">₹{(item.price * item.quantity).toFixed(0)}</p>
+                                  </div>
+                               </div>
+                            </div>
+                         ))}
+                         {(!packItems || packItems.length === 0) && (
+                            <div className="h-full flex flex-col items-center justify-center text-slate-300 py-10">
+                               <ShoppingBag size={40} className="mb-2 opacity-20" />
+                               <p className="text-xs font-bold uppercase tracking-widest">Pack is empty</p>
+                            </div>
+                         )}
+                      </div>
+
+                      <div className="mt-6 pt-4 border-t border-slate-200">
+                         <div className="flex justify-between items-center text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">
+                            <span>Bundle Savings</span>
+                            <span className="text-emerald-500">₹{Math.max(0, packItems.reduce((sum, item) => sum + ((item.previousPrice || item.price) * item.quantity), 0) - packItems.reduce((sum, item) => sum + (item.price * item.quantity), 0))}</span>
+                         </div>
+                         <div className="flex justify-between items-center text-slate-900 font-black">
+                            <span className="text-sm">Total Bundle Value</span>
+                            <span className="text-xl">₹{packItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)}</span>
+                         </div>
+                      </div>
+                   </div>
+                </div>
+
+                <div className="flex gap-4 pt-4">
+                   <button type="button" onClick={() => setIsValuePackModalOpen(false)} className="flex-1 py-4 font-black rounded-2xl bg-slate-100 text-slate-500 hover:bg-slate-200 transition">Cancel</button>
+                   <button type="submit" className="flex-1 py-4 font-black rounded-2xl bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-200 transition">Save Value Pack</button>
+                </div>
+             </form>
+          </div>
         </div>
       )}
 

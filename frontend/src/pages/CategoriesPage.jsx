@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { ChevronLeft } from 'lucide-react';
+import useSEO from '../hooks/useSEO';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -24,6 +25,13 @@ const CategoriesPage = () => {
   const { user } = useAuth();
   const isB2B = user?.role === 'b2b';
   const navigate = useNavigate();
+  
+  useSEO({
+    title: 'All Categories – Shop Fresh Fruits, Vegetables, Dairy',
+    description: 'Explore our wide range of farm-sourced fresh grocery categories. From organic fruits and vegetables to daily dairy essentials, delivered to you in 45-60 minutes.',
+    canonical: '/categories',
+    keywords: ['grocery categories', 'buy organic produce', 'fresh milk online', 'fruits online India'],
+  });
   
   const [categories, setCategories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);

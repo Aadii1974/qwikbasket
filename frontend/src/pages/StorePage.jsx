@@ -5,6 +5,7 @@ import ProductCard from '../components/ProductCard';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Lock, Unlock, Package, TrendingUp, Star, Zap } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import useSEO from '../hooks/useSEO';
 
 const THEMES = {
   default: { 
@@ -55,6 +56,15 @@ const StorePage = () => {
   const [allProducts, setAllProducts] = useState([]);
   const [homeSections, setHomeSections] = useState({ latest: [], trending: [], mostPurchased: [] });
   const [isLoading, setIsLoading] = useState(true);
+
+  useSEO({
+    title: storeDetails ? `${storeDetails.name} – Local Fresh Grocery Store` : 'Local QwikBasket Store',
+    description: storeDetails 
+      ? `Visit our local ${storeDetails.name} branch on QwikBasket. Get lightning-fast, 45-60 min delivery of fresh organic groceries, dairy, and farm produce from this store.`
+      : 'Explore your nearest QwikBasket local organic grocery store for direct-to-farm deliveries.',
+    canonical: `/store/${id}`,
+    keywords: storeDetails ? [`QwikBasket ${storeDetails.name}`, `grocery store near me`, `organic delivery ${storeDetails.name}`] : [],
+  });
 
   // Parse visible sections from store
   const getVisibleSections = (store) => {

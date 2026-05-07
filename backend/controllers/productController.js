@@ -4,7 +4,26 @@ const { Op } = require('sequelize');
 
 const getProducts = async (req, res) => {
   try {
-    const products = await Product.findAll();
+    const { isAdmin } = req.query;
+    const where = {};
+    
+    // Non-admin view (storefront) hides products that are ONLY for bulk
+    if (isAdmin !== 'true') {
+      where.isBulkOnly = false;
+    }
+
+    const products = await Product.findAll({ where });
+    res.status(200).json({ success: true, data: products });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+const getBulkProducts = async (req, res) => {
+  try {
+    const products = await Product.findAll({
+      where: { isBulkOnly: true }
+    });
     res.status(200).json({ success: true, data: products });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -33,6 +52,9 @@ const sanitizeData = (data) => {
   if (data.isFlashSale === 'true') data.isFlashSale = true;
   else if (data.isFlashSale === 'false') data.isFlashSale = false;
 
+  if (data.isBulkOnly === 'true') data.isBulkOnly = true;
+  else if (data.isBulkOnly === 'false') data.isBulkOnly = false;
+
   // ratePerUnit is a plain string — clean empty to null
   if (data.ratePerUnit === "" || data.ratePerUnit === undefined) data.ratePerUnit = null;
 
@@ -46,6 +68,9 @@ const createProduct = async (req, res) => {
     // Ensure b2bTiers is a string for TEXT column
     if (data.b2bTiers && typeof data.b2bTiers !== 'string') {
       data.b2bTiers = JSON.stringify(data.b2bTiers);
+    }
+    if (data.variants && typeof data.variants !== 'string') {
+      data.variants = JSON.stringify(data.variants);
     }
 
     data = sanitizeData(data);
@@ -78,6 +103,9 @@ const updateProduct = async (req, res) => {
     // Ensure b2bTiers is a string for TEXT column
     if (data.b2bTiers && typeof data.b2bTiers !== 'string') {
       data.b2bTiers = JSON.stringify(data.b2bTiers);
+    }
+    if (data.variants && typeof data.variants !== 'string') {
+      data.variants = JSON.stringify(data.variants);
     }
 
     data = sanitizeData(data);
@@ -120,7 +148,9 @@ const deleteProduct = async (req, res) => {
 
 const getHomeSections = async (req, res) => {
   try {
-    const products = await Product.findAll();
+    const products = await Product.findAll({
+      where: { isBulkOnly: false }
+    });
 
     // Latest Additions
     const latest = [...products]
@@ -156,9 +186,10 @@ const getRecommendations = async (req, res) => {
     const { cartItemIds } = req.query; // Exclude items already in cart
     const excludedIds = cartItemIds ? cartItemIds.split(',').filter(Boolean) : [];
     
-    const whereClause = excludedIds.length > 0
-      ? { id: { [Op.notIn]: excludedIds } }
-      : {};
+    const whereClause = {
+      isBulkOnly: false,
+      ...(excludedIds.length > 0 ? { id: { [Op.notIn]: excludedIds } } : {})
+    };
 
     // Recommend: high-rated products not already in cart
     // MySQL-compatible: ISNULL(rating) ASC puts NULLs last, then rating DESC
@@ -184,4 +215,49 @@ const getRecommendations = async (req, res) => {
   }
 };
 
-module.exports = { getProducts, createProduct, updateProduct, deleteProduct, getHomeSections, getRecommendations };
+const validateCartStock = async (req, res) => {
+  try {
+    const { items } = req.body;
+    if (!items || !Array.isArray(items)) {
+      return res.status(400).json({ success: false, error: 'Invalid items array' });
+    }
+    
+    const results = [];
+    
+    for (const item of items) {
+      if (item.isValuePack) continue;
+      
+      const product = await Product.findByPk(item.id || item.productId);
+      if (!product) continue;
+      
+      let availableStock = Number(product.stock) || 0;
+      let variantName = '';
+      
+      if (item.variantId && product.variants) {
+         let variants = [];
+         try { variants = JSON.parse(product.variants); } catch(e){}
+         const v = variants.find(v => v.id === item.variantId);
+         if (v) {
+            availableStock = Number(v.stock) || 0;
+            variantName = ` - ${v.size}`;
+         }
+      }
+      
+      if (item.quantity > availableStock) {
+        results.push({
+          id: item.id,
+          variantId: item.variantId,
+          availableStock,
+          requested: item.quantity,
+          name: product.name + variantName
+        });
+      }
+    }
+    
+    res.status(200).json({ success: true, data: results });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+module.exports = { getProducts, getBulkProducts, createProduct, updateProduct, deleteProduct, getHomeSections, getRecommendations, validateCartStock };

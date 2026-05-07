@@ -20,9 +20,11 @@ const Product = sequelize.define('Product', {
   reviews: { type: DataTypes.INTEGER, defaultValue: 0 },
   isFlashSale: { type: DataTypes.BOOLEAN, defaultValue: false },
   packagingSize: { type: DataTypes.STRING, allowNull: true }, // e.g., "Pack of 12", "Box of 24"
+  variants: { type: DataTypes.TEXT, allowNull: true }, // Store stringified JSON array of variants [{id, size, b2cOldPrice, b2cNewPrice, b2bOldPrice, b2bNewPrice, stock, minB2BQty}]
   storeId: { type: DataTypes.UUID, allowNull: true },
   categoryId: { type: DataTypes.UUID, allowNull: true },
   subCategoryId: { type: DataTypes.UUID, allowNull: true },
+  isBulkOnly: { type: DataTypes.BOOLEAN, defaultValue: false },
 }, { timestamps: true });
 
 module.exports = Product;

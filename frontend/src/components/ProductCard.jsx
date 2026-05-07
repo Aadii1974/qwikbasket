@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 
 const LOW_STOCK_THRESHOLD = 10;
 
-const ProductCard = ({ product, allProducts = [] }) => {
+const ProductCard = ({ product, allProducts = [], disableClick = false }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { cartItems, addToCart, updateQuantity, removeFromCart, getTieredPrice } = useCart();
@@ -23,21 +23,37 @@ const ProductCard = ({ product, allProducts = [] }) => {
   const showWholesaleTheme = isWholesaleActive;
   const showWholesaleData = isWholesaleActive;
 
-  // Build variants list — group products that share the same base name
-  const getBaseName = (name) => {
-    if (!name) return '';
-    return name.replace(/\s*[-–]\s*\d+(\.\d+)?\s*(kg|g|l|ml|ltr|litre|piece|pcs|pack)\s*/gi, '').trim().toLowerCase();
+  // Build variants list from new JSON field
+  let variants = [];
+  try {
+    variants = product.variants ? (typeof product.variants === 'string' ? JSON.parse(product.variants) : product.variants) : [];
+  } catch(e) { variants = []; }
+
+  const hasVariants = variants.length > 0;
+  
+  // Auto-select first variant if variants exist
+  useEffect(() => {
+    if (hasVariants && selectedVariantId === product.id) {
+       setSelectedVariantId(variants[0].id);
+    }
+  }, [hasVariants, product.id, variants, selectedVariantId]);
+
+  const selectedVariant = hasVariants ? variants.find(v => v.id === selectedVariantId) || variants[0] : null;
+
+  // Active product overrides for pricing and stock
+  const activeProduct = {
+    ...product,
+    id: selectedVariant ? `${product.id}_${selectedVariant.id}` : product.id,
+    baseProductId: product.id,
+    variantId: selectedVariant?.id,
+    stock: selectedVariant ? selectedVariant.stock : product.stock,
+    b2cOldPrice: selectedVariant ? selectedVariant.b2cOldPrice : product.b2cOldPrice,
+    b2cNewPrice: selectedVariant ? selectedVariant.b2cNewPrice : product.b2cNewPrice,
+    b2bOldPrice: selectedVariant ? selectedVariant.b2bOldPrice : product.b2bOldPrice,
+    b2bNewPrice: selectedVariant ? selectedVariant.b2bNewPrice : product.b2bNewPrice,
+    minB2BQty: selectedVariant ? selectedVariant.minB2BQty : product.minB2BQty,
+    packagingSize: selectedVariant ? selectedVariant.size : product.packagingSize,
   };
-
-  const variants = allProducts.length > 0
-    ? allProducts.filter(p => p && p.name && getBaseName(p.name) === getBaseName(product.name) && p.packagingSize)
-    : [];
-  const hasVariants = variants.length > 1;
-
-  // Active product (might change if variant selected)
-  const activeProduct = (hasVariants && selectedVariantId !== product.id)
-    ? variants.find(v => v.id === selectedVariantId) || product
-    : product;
 
   // Stock State
   const stock = Number(activeProduct.stock) || 0;
@@ -105,10 +121,10 @@ const ProductCard = ({ product, allProducts = [] }) => {
 
   return (
     <div
-      onClick={() => !isOutOfStock && navigate(`/product/${activeProduct.id}`)}
+      onClick={() => !isOutOfStock && !disableClick && navigate(`/product/${product.id}`)}
       className={`card-premium group relative flex flex-col w-full h-full overflow-hidden select-none
         ${showWholesaleTheme ? 'border-red-100' : ''}
-        ${isOutOfStock ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}`}
+        ${isOutOfStock ? 'opacity-70 cursor-not-allowed' : (disableClick ? 'cursor-default' : 'cursor-pointer')}`}
     >
       {/* ── Image Area ─────────────────────────────── */}
       <div className={`relative w-full flex items-center justify-center rounded-t-[18px] overflow-hidden
@@ -208,7 +224,7 @@ const ProductCard = ({ product, allProducts = [] }) => {
               >
                 {variants.map(v => (
                   <option key={v.id} value={v.id}>
-                    {v.packagingSize}{v.ratePerUnit ? ` · ${v.ratePerUnit}` : ''}
+                    {v.size}
                   </option>
                 ))}
               </select>

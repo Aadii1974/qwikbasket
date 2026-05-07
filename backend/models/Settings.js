@@ -133,7 +133,7 @@ const Settings = sequelize.define('Settings', {
   },
   // ── Delivery/Trust Section Image ─────────────────────────
   deliverySectionImage: {
-    type: DataTypes.STRING(1000),
+    type: DataTypes.TEXT,
     defaultValue: '', // Admin uploads image shown on right of delivery trust section
   },
   // ── Launch / Marketing Mode ───────────────────────────
@@ -152,8 +152,20 @@ const Settings = sequelize.define('Settings', {
     defaultValue: 'We are launching soon! Stay tuned.',
   },
   launchPopupImage: {
-    type: DataTypes.STRING(1000),
+    type: DataTypes.TEXT,
     defaultValue: '',
+  },
+  splashVideoUrl: {
+    type: DataTypes.TEXT,
+    defaultValue: '',
+  },
+  nightModeStartHour: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0,
+  },
+  nightModeEndHour: {
+    type: DataTypes.INTEGER,
+    defaultValue: 6,
   },
   // ── Delivery Slots Configuration ──────────────────────
   // JSON array of slot objects: [{id, label, startHour, endHour, cutoffHour}, ...]
@@ -168,6 +180,34 @@ const Settings = sequelize.define('Settings', {
     ]),
   },
 
+  // ── Checkout Dynamic Sections ──────────────────────────
+  // JSON array of section objects: [{ id: 's1', title: '₹9 Deals', productIds: [1,2,3], isVisible: true }]
+  checkoutSections: {
+    type: DataTypes.TEXT,
+    defaultValue: '[]',
+  },
+  // ── Spin Wheel Configuration ──────────────────────────
+  spinWheelEnabled: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+  },
+  spinWheelMinCartValue: {
+    type: DataTypes.FLOAT,
+    defaultValue: 500,
+  },
+  spinWheelItems: {
+    type: DataTypes.TEXT,
+    defaultValue: '[]', // [{id, name, image}]
+  },
+  // ── Bulk Basket System ──────────────────────────────
+  bulkDiscountThreshold: {
+    type: DataTypes.FLOAT,
+    defaultValue: 2000, // Order above ₹2000 in bulk section to get discount
+  },
+  bulkDiscountPercentage: {
+    type: DataTypes.FLOAT,
+    defaultValue: 5, // 5% extra discount
+  },
 }, {
   timestamps: true,
 });

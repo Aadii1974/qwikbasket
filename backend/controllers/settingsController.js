@@ -48,6 +48,15 @@ const updateSettings = async (req, res) => {
       'deliverySlots',
       // Legacy (kept for backward compat)
       'homeHeroImage1', 'homeHeroImage2', 'homeHeroImage3',
+      // Dynamic Checkout Sections
+      'checkoutSections',
+      // Branding
+      'splashVideoUrl',
+      'nightModeStartHour', 'nightModeEndHour',
+      // Spin Wheel
+      'spinWheelEnabled', 'spinWheelMinCartValue', 'spinWheelItems',
+      // Bulk Basket
+      'bulkDiscountThreshold', 'bulkDiscountPercentage',
     ];
 
     const update = {};

@@ -61,7 +61,7 @@ const AddressForm = ({ onSave, onCancel, isLoading }) => {
     e.preventDefault();
     setError('');
     if (form.fullName.length < 3) return setError('Full name must be at least 3 characters.');
-    if (!/^\d{10}$/.test(form.phone)) return setError('Enter a valid 10-digit phone number.');
+    if (!/^[6-9]\d{9}$/.test(form.phone)) return setError('Enter a valid 10-digit Indian phone number starting with 6, 7, 8, or 9.');
     if (form.addressLine.length < 5) return setError('Please enter your complete address.');
     if (!/^\d{6}$/.test(form.pincode)) return setError('Pincode must be exactly 6 digits.');
     if (pincodeStatus === 'error') return setError("We don't deliver to this pincode yet.");
@@ -94,7 +94,7 @@ const AddressForm = ({ onSave, onCancel, isLoading }) => {
           </div>
           <div className="relative">
             <Phone size={13} className="absolute left-3 top-3.5 text-slate-400" />
-            <input required name="phone" value={form.phone} onChange={handleChange}
+            <input required name="phone" value={form.phone} onChange={e => setForm(prev => ({ ...prev, phone: e.target.value.replace(/\D/g, '') }))}
               placeholder="Phone *" maxLength={10} type="tel"
               className="w-full pl-8 pr-3 py-3 rounded-xl border-2 border-slate-200 text-sm font-medium outline-none focus:border-[var(--secondary)] transition bg-white" />
           </div>
@@ -345,7 +345,7 @@ const EditModal = ({ isOpen, onClose, form, setForm, onSave }) => {
           </div>
           <div>
             <label className="text-xs font-black uppercase tracking-widest text-slate-400 mb-2 block">Phone Number</label>
-            <input required value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })}
+            <input required maxLength={10} type="tel" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value.replace(/\D/g, '') })}
               className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-100 font-bold outline-none focus:border-[var(--secondary)]" />
           </div>
           <div className="flex gap-3 mt-8">
@@ -465,6 +465,10 @@ const Profile = () => {
 
   const handleEditProfile = async (e) => {
     e.preventDefault();
+    if (!/^[6-9]\d{9}$/.test(editForm.phone)) {
+      alert('Please enter a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9.');
+      return;
+    }
     try {
       const res = await updateUserProfile(editForm);
       if (res.success) {

@@ -128,12 +128,68 @@ export const deleteCoupon = async (id) => {
 };
 
 // PRODUCTS
-export const fetchProducts = async () => {
+export const fetchProducts = async (isAdmin = false) => {
   try {
-    const res = await fetch(`${API_URL}/products`);
+    const res = await fetch(`${API_URL}/products${isAdmin ? '?isAdmin=true' : ''}`);
     const data = await res.json();
     return data.data || [];
   } catch (e) { return []; }
+};
+
+export const fetchBulkProducts = async () => {
+  try {
+    const res = await fetch(`${API_URL}/products/bulk`);
+    const data = await res.json();
+    return data.data || [];
+  } catch (e) { return []; }
+};
+
+export const validateCartStock = async (items) => {
+  try {
+    const res = await fetch(`${API_URL}/products/validate-cart`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items }),
+    });
+    return await res.json();
+  } catch (e) {
+    return { success: false, data: [] };
+  }
+};
+
+// VALUE PACKS
+export const fetchValuePacks = async () => {
+  try {
+    const res = await fetch(`${API_URL}/value-packs`, { headers: getAuthHeaders() });
+    const data = await res.json();
+    return data.data || [];
+  } catch (e) { return []; }
+};
+
+export const createValuePack = async (packData) => {
+  const res = await fetch(`${API_URL}/value-packs`, {
+    method: 'POST',
+    headers: getAuthHeaders('application/json'),
+    body: JSON.stringify(packData),
+  });
+  return await res.json();
+};
+
+export const updateValuePack = async (id, packData) => {
+  const res = await fetch(`${API_URL}/value-packs/${id}`, {
+    method: 'PUT',
+    headers: getAuthHeaders('application/json'),
+    body: JSON.stringify(packData),
+  });
+  return await res.json();
+};
+
+export const deleteValuePack = async (id) => {
+  const res = await fetch(`${API_URL}/value-packs/${id}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+  return await res.json();
 };
 
 export const createProduct = async (productData) => {
@@ -514,48 +570,8 @@ export const saveUserLocation = async ({ latitude, longitude, locationLabel }) =
   } catch (e) { return { success: false }; }
 };
 
-// BANNERS
-export const fetchBanners = async () => {
-  try {
-    const res = await fetch(`${API_URL}/banners`);
-    return await res.json();
-  } catch (e) { return []; }
-};
-
-export const fetchAllBannersAdmin = async () => {
-  try {
-    const res = await fetch(`${API_URL}/banners/all`, { headers: getAuthHeaders() });
-    return await res.json();
-  } catch (e) { return []; }
-};
-
-export const createBanner = async (bannerData) => {
-  const res = await fetch(`${API_URL}/banners`, {
-    method: 'POST',
-    headers: getAuthHeaders(),
-    body: JSON.stringify(bannerData),
-  });
-  return await res.json();
-};
-
-export const updateBanner = async (id, bannerData) => {
-  const res = await fetch(`${API_URL}/banners/${id}`, {
-    method: 'PUT',
-    headers: getAuthHeaders(),
-    body: JSON.stringify(bannerData),
-  });
-  return await res.json();
-};
-
-export const deleteBanner = async (id) => {
-  const res = await fetch(`${API_URL}/banners/${id}`, {
-    method: 'DELETE',
-    headers: getAuthHeaders(),
-  });
-  return await res.json();
-};
-
 // ── Generic Image Upload (for Media Manager) ─────────────────────────────
+
 export const uploadImage = async (file) => {
   const fd = new FormData();
   fd.append('images', file);
@@ -564,7 +580,7 @@ export const uploadImage = async (file) => {
     const u = JSON.parse(localStorage.getItem('user') || '{}');
     token = u?.token || '';
   } catch {}
-  const res = await fetch(`/api/upload`, {
+  const res = await fetch(`${API_URL}/upload`, {
     method: 'POST',
     headers: token ? { Authorization: `Bearer ${token}` } : {},
     body: fd,

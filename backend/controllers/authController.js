@@ -3,12 +3,9 @@ const User = require('../models/User');
 
 const register = async (req, res) => {
   try {
-    console.log('📝 Signup Request Received:', req.body.phone, 'Role:', req.body.role);
     const result = await AuthService.signup(req.body);
-    console.log('✅ Signup Success:', result.user.phone);
     res.status(201).json({ success: true, message: 'User registered successfully', data: result.user, token: result.token });
   } catch (err) {
-    console.error('❌ Signup Failed:', err.message);
     res.status(400).json({ success: false, error: err.message });
   }
 };
@@ -16,12 +13,9 @@ const register = async (req, res) => {
 const login = async (req, res) => {
   try {
     const { phone, password } = req.body;
-    console.log('🔑 Login Attempt:', phone);
     const result = await AuthService.login(phone, password);
-    console.log('✅ Login Success:', phone, 'Role:', result.user.role);
     res.status(200).json({ success: true, message: 'Login successful', ...result });
   } catch (err) {
-    console.error('❌ Login Failed:', err.message);
     res.status(401).json({ success: false, error: err.message });
   }
 };
@@ -30,15 +24,12 @@ const login = async (req, res) => {
 // Returns all B2B users who have not yet been approved
 const getPendingB2B = async (req, res) => {
   try {
-    console.log('🔎 Searching for Pending B2B users...');
     const pendingUsers = await User.findAll({
       where: { role: 'b2b', isApproved: false },
       attributes: ['id', 'name', 'phone', 'companyName', 'gstNumber', 'fssaiNumber', 'createdAt'],
     });
-    console.log('📊 Found Pending Users:', pendingUsers.length);
     res.status(200).json({ success: true, data: pendingUsers });
   } catch (err) {
-    console.error('❌ Fetch Pending B2B Failed:', err.message);
     res.status(500).json({ success: false, error: err.message });
   }
 };

@@ -119,6 +119,10 @@ const Order = sequelize.define('Order', {
     type: DataTypes.FLOAT,
     defaultValue: 0,
   },
+  bulkVolumeDiscount: {
+    type: DataTypes.FLOAT,
+    defaultValue: 0,
+  },
 }, {
   timestamps: true,
 });

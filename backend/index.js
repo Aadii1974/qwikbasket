@@ -14,6 +14,7 @@ const settingsRoutes = require('./routes/settingsRoutes');
 const deliveryRoutes = require('./routes/deliveryRoutes');
 const couponRoutes   = require('./routes/couponRoutes');
 const uploadRoutes   = require('./routes/uploadRoutes');
+const valuePackRoutes = require('./routes/valuePackRoutes');
 
 
 const app = express();
@@ -35,9 +36,7 @@ app.use('/api/settings',   settingsRoutes);
 app.use('/api/delivery',   deliveryRoutes);
 app.use('/api/coupons',    couponRoutes);
 app.use('/api/upload',     uploadRoutes);
-
-
-
+app.use('/api/value-packs', valuePackRoutes);
 
 // Health Check
 app.get('/', (req, res) => res.json({ status: 'ok', message: '🚀 QwikBasket API is running' }));

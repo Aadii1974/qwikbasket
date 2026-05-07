@@ -4,6 +4,7 @@ import { fetchProducts } from '../services/api';
 import ProductCard from '../components/ProductCard';
 import { Search } from 'lucide-react';
 import { motion } from 'framer-motion';
+import useSEO from '../hooks/useSEO';
 
 const SearchPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -11,6 +12,15 @@ const SearchPage = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchInput, setSearchInput] = useState(query);
+
+  useSEO({
+    title: query ? `"${query}" – Search Results` : 'Search Groceries Online',
+    description: query
+      ? `Find ${query} on QwikBasket. Fresh farm produce delivered fast. Competitive prices and Qwik delivery.`
+      : 'Search for fresh groceries, dairy, vegetables and farm produce on QwikBasket.',
+    canonical: '/search',
+    noindex: !query,
+  });
 
   useEffect(() => {
     const loadProducts = async () => {
@@ -81,7 +91,7 @@ const SearchPage = () => {
                 <p className="text-slate-500 font-bold mt-2">Try searching for something else</p>
               </div>
             ) : (
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-2 md:gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-2 md:gap-4">
                 {products.map(product => (
                   <motion.div initial={{opacity: 0, y: 10}} animate={{opacity: 1, y: 0}} key={product.id}>
                     <ProductCard product={product} allProducts={products} />

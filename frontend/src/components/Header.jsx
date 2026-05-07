@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Search, ShoppingCart, User, MapPin, ChevronDown, Bell, LogOut, Menu, Check, Loader2, Navigation } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
@@ -9,6 +9,7 @@ const Header = () => {
   const { user, logout } = useAuth();
   const { cartCount, subtotal } = useCart();
   const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownRef = useRef(null);
   const navigate = useNavigate();
   const [searchInput, setSearchInput] = useState('');
   
@@ -43,6 +44,17 @@ const Header = () => {
     } else {
       autoFetchLocation();
     }
+  }, []);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const autoFetchLocation = () => {
@@ -118,11 +130,11 @@ const Header = () => {
   return (
     <>
       <header className="glass-nav sticky top-0 z-40 py-2 md:py-3 transition-all duration-300">
-        <div className="max-w-[1440px] mx-auto px-4 md:px-6 lg:px-10 flex items-center justify-between gap-3">
+        <div className="max-w-[1440px] mx-auto px-3 sm:px-4 md:px-6 lg:px-10 flex items-center justify-between gap-2 sm:gap-3">
           
-          <div className="flex items-center gap-2 md:gap-6 flex-shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-2 md:gap-6 flex-shrink-0 min-w-0">
             <Link to="/" className="flex items-center gap-1.5 group min-w-0 flex-shrink-0">
-              <span className="text-[20px] md:text-[28px] font-[900] tracking-tighter truncate" style={{ color: 'var(--secondary)' }}>
+              <span className="text-[18px] sm:text-[20px] md:text-[28px] font-[900] tracking-tighter truncate" style={{ color: 'var(--secondary)' }}>
                 Qwik<span className="text-slate-800">Basket</span>
               </span>
               <span className="bg-amber-100 text-amber-700 text-[8px] px-1.5 py-0.5 rounded-full font-[900] uppercase tracking-wider hidden md:block shadow-sm border border-amber-200">
@@ -131,23 +143,23 @@ const Header = () => {
             </Link>
 
             <div 
-               className="hidden md:flex flex-col border-l border-slate-100 pl-5 cursor-pointer hover:opacity-70 transition-opacity"
+               className="flex flex-col ml-1 sm:ml-2 md:ml-0 md:border-l border-slate-100 pl-2 md:pl-5 cursor-pointer hover:opacity-70 transition-opacity min-w-0"
                onClick={() => setShowLocationModal(true)}
             >
-              <div className="flex items-center gap-1 text-[9px] font-black uppercase tracking-widest text-slate-400 mb-0.5">
+              <div className="flex items-center gap-1 text-[8px] md:text-[9px] font-black uppercase tracking-widest text-slate-400 mb-0.5 whitespace-nowrap">
                 {isLocating ? (
                    <span className="flex items-center gap-1"><Loader2 size={9} className="animate-spin" /> Locating...</span>
                 ) : isServiceable ? (
                    <span className="text-[var(--secondary)] flex items-center gap-1">
-                     <Check size={9} strokeWidth={4} /> Express Delivery
+                     <Check size={9} strokeWidth={4} /> <span className="hidden sm:inline">Express Delivery</span><span className="sm:hidden">Delivery</span>
                    </span>
                 ) : (
                    <span className="text-red-500 uppercase">Out of zone</span>
                 )}
               </div>
-              <div className="flex items-center gap-1 text-[12px] font-bold text-slate-800 truncate max-w-[140px]">
+              <div className="flex items-center gap-1 text-[10px] sm:text-[11px] md:text-[12px] font-bold text-slate-800 truncate max-w-[60px] sm:max-w-[100px] md:max-w-[140px]">
                 <span className="truncate">{locationStr}</span>
-                <ChevronDown size={12} className="text-slate-400 flex-shrink-0" />
+                <ChevronDown size={11} className="text-slate-400 flex-shrink-0" />
               </div>
             </div>
           </div>
@@ -173,64 +185,106 @@ const Header = () => {
             </form>
           </div>
 
-          <div className="flex items-center gap-2 md:gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3 flex-shrink-0">
             {/* Mobile search icon */}
-            <Link to="/search" className="lg:hidden p-2.5 rounded-full bg-slate-50 text-slate-600 hover:bg-slate-100 transition-colors flex-shrink-0">
-              <Search size={17} strokeWidth={2.5} />
+            <Link to="/search" className="lg:hidden p-2 sm:p-2.5 rounded-full bg-slate-50 text-slate-600 hover:bg-slate-100 transition-colors flex-shrink-0">
+              <Search size={16} strokeWidth={2.5} />
             </Link>
 
             {/* Desktop user menu */}
-            <div className="hidden lg:block">
+            <div className="hidden lg:block relative" ref={dropdownRef}>
               {user ? (
-                <div
-                  className="relative py-1"
-                  onMouseEnter={() => setShowDropdown(true)}
-                  onMouseLeave={() => {
-                    // Small delay so moving from trigger to menu doesn't close it
-                    setTimeout(() => setShowDropdown(false), 100);
-                  }}
-                >
-                  <button className="flex items-center gap-2 text-sm font-bold text-slate-700 hover:text-[var(--secondary)] transition-colors px-3 py-2 rounded-full hover:bg-slate-50">
-                    <div className="w-8 h-8 rounded-full bg-[var(--secondary)]/10 flex items-center justify-center text-[var(--secondary)] flex-shrink-0">
+                <>
+                  <button
+                    id="user-menu-btn"
+                    onClick={() => setShowDropdown(v => !v)}
+                    className="flex items-center gap-2 text-sm font-bold text-slate-700 hover:text-[var(--secondary)] transition-colors px-3 py-2 rounded-full hover:bg-slate-50"
+                  >
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                      user.role === 'admin' ? 'bg-slate-900 text-white' :
+                      user.role === 'delivery_agent' ? 'bg-blue-100 text-blue-600' :
+                      user.role === 'b2b' ? 'bg-red-100 text-red-600' :
+                      'bg-[var(--secondary)]/10 text-[var(--secondary)]'
+                    }`}>
                       <User size={16} strokeWidth={2.5} />
                     </div>
                     <span className="hidden xl:inline max-w-[100px] truncate">{user.name}</span>
+                    <ChevronDown size={14} className={`text-slate-400 transition-transform duration-200 ${showDropdown ? 'rotate-180' : ''}`} />
                   </button>
-                  {/* Invisible bridge — fills the 6px gap between button bottom and dropdown top */}
-                  {showDropdown && (
-                    <div className="absolute top-full right-0 w-full h-3 bg-transparent z-40" />
-                  )}
+
                   {showDropdown && (
                     <div
-                      className="absolute top-full right-0 w-60 mt-1.5 p-1 bg-white rounded-2xl shadow-2xl border border-slate-100 z-50 overflow-hidden"
-                      onMouseEnter={() => setShowDropdown(true)}
-                      onMouseLeave={() => setShowDropdown(false)}
+                      className="absolute top-full right-0 w-64 mt-2 p-1.5 bg-white rounded-2xl shadow-2xl border border-slate-100 z-[300] animate-fade-in"
+                      style={{ filter: 'drop-shadow(0 20px 40px rgba(0,0,0,0.12))' }}
                     >
-                      <div className="p-4 rounded-xl bg-slate-50 mb-1">
-                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Signed in as</p>
+                      {/* User info card */}
+                      <div className="px-4 py-3 rounded-xl bg-slate-50 mb-1.5">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-0.5">Signed in as</p>
                         <p className="font-extrabold text-sm truncate text-slate-900">{user.name}</p>
                         <span className={`text-[9px] font-black px-2 py-0.5 rounded-full mt-1.5 inline-block ${
                           user.role === 'admin' ? 'bg-slate-900 text-white' :
                           user.role === 'delivery_agent' ? 'bg-blue-100 text-blue-700' :
                           user.role === 'b2b' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
                         }`}>
-                          {user.role === 'admin' ? 'Admin' : user.role === 'delivery_agent' ? 'Delivery Agent' : user.role === 'b2b' ? 'Business' : 'Member'}
+                          {user.role === 'admin' ? '⚙️ Admin' : user.role === 'delivery_agent' ? '🚚 Delivery Agent' : user.role === 'b2b' ? '🏢 Business' : '👤 Member'}
                         </span>
                       </div>
-                      {user.role === 'delivery_agent' ? (
-                        <Link to="/delivery" className="flex items-center p-3 text-sm font-bold text-slate-700 hover:bg-slate-50 hover:text-blue-600 rounded-xl transition-colors">Delivery Dashboard</Link>
-                      ) : (
-                        <Link to="/profile" className="flex items-center p-3 text-sm font-bold text-slate-700 hover:bg-slate-50 hover:text-[var(--secondary)] rounded-xl transition-colors">My Account</Link>
-                      )}
+
+                      {/* Admin Panel — only for admin */}
                       {user.role === 'admin' && (
-                        <Link to="/admin" className="flex items-center p-3 text-sm font-bold text-slate-700 hover:bg-emerald-50 hover:text-emerald-600 rounded-xl transition-colors">Admin Panel</Link>
+                        <Link
+                          onClick={() => setShowDropdown(false)}
+                          to="/admin"
+                          className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 rounded-xl transition-colors"
+                        >
+                          <div className="w-7 h-7 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-600 flex-shrink-0">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                          </div>
+                          Admin Panel
+                        </Link>
                       )}
-                      <button onClick={logout} className="w-full flex items-center gap-2 p-3 text-red-500 text-sm font-bold hover:bg-red-50 rounded-xl border-t border-slate-100 mt-1 transition-colors">
-                        <LogOut size={14} /> Sign Out
-                      </button>
+
+                      {/* Delivery Dashboard — only for delivery_agent */}
+                      {user.role === 'delivery_agent' && (
+                        <Link
+                          onClick={() => setShowDropdown(false)}
+                          to="/delivery"
+                          className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-700 hover:bg-blue-50 hover:text-blue-700 rounded-xl transition-colors"
+                        >
+                          <div className="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 flex-shrink-0">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                          </div>
+                          Delivery Dashboard
+                        </Link>
+                      )}
+
+                      {/* My Account — shown for all roles */}
+                      <Link
+                        onClick={() => setShowDropdown(false)}
+                        to="/profile"
+                        className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50 hover:text-[var(--secondary)] rounded-xl transition-colors"
+                      >
+                        <div className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500 flex-shrink-0">
+                          <User size={14} strokeWidth={2.5} />
+                        </div>
+                        My Account
+                      </Link>
+
+                      {/* Sign Out — always last */}
+                      <div className="border-t border-slate-100 mt-1 pt-1">
+                        <button
+                          onClick={() => { setShowDropdown(false); logout(); }}
+                          className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-red-500 hover:bg-red-50 rounded-xl transition-colors"
+                        >
+                          <div className="w-7 h-7 rounded-lg bg-red-50 flex items-center justify-center text-red-500 flex-shrink-0">
+                            <LogOut size={14} />
+                          </div>
+                          Sign Out
+                        </button>
+                      </div>
                     </div>
                   )}
-                </div>
+                </>
               ) : (
                 <Link to="/login" className="px-5 py-2 rounded-full text-sm font-black text-slate-700 border border-slate-200 hover:border-[var(--secondary)] hover:text-[var(--secondary)] transition-all">
                   Sign In
@@ -238,27 +292,32 @@ const Header = () => {
               )}
             </div>
 
-            {/* Wallet Button */}
+            {/* Farmer Coins Button — icon always visible, count shown on md+ */}
             {user && (user.role === 'b2c' || user.role === 'b2b') && (
-               <Link to="/profile" onClick={() => localStorage.setItem('profileActiveTab', 'wallet')} className="flex items-center gap-1.5 bg-gradient-to-r from-yellow-100 to-amber-100 text-amber-800 px-3 py-2 rounded-full hover:shadow-md transition border border-yellow-200">
-                  <span className="text-sm drop-shadow-sm">👳🏽‍♂️</span>
-                  <span className="font-black text-sm drop-shadow-sm">{farmerCoins}</span>
+               <Link
+                 to="/profile"
+                 onClick={() => localStorage.setItem('profileActiveTab', 'wallet')}
+                 className="flex items-center gap-1 bg-gradient-to-r from-yellow-100 to-amber-100 text-amber-800 px-2 sm:px-2.5 py-1.5 sm:py-2 rounded-full hover:shadow-md transition border border-yellow-200 flex-shrink-0"
+               >
+                  <span className="text-sm leading-none">👳🏽‍♂️</span>
+                  <span className="hidden md:inline font-black text-xs drop-shadow-sm">{farmerCoins}</span>
                </Link>
             )}
 
-            {/* Cart Button */}
+            {/* Cart Button — always visible, badge-only on xs, full label on sm+ */}
             {user?.role !== 'delivery_agent' && (
               <Link to="/cart"
-                className="flex items-center gap-2.5 bg-[var(--secondary)] text-white pl-3.5 pr-4 py-2.5 rounded-full shadow-md shadow-[var(--secondary)]/25 hover:shadow-lg hover:brightness-105 transition-all active:scale-95 flex-shrink-0">
+                className="flex items-center gap-1.5 sm:gap-2 bg-[var(--secondary)] text-white pl-2.5 sm:pl-3.5 pr-2.5 sm:pr-4 py-2 sm:py-2.5 rounded-full shadow-md shadow-[var(--secondary)]/25 hover:shadow-lg hover:brightness-105 transition-all active:scale-95 flex-shrink-0">
                 <div className="relative">
-                  <ShoppingCart size={18} strokeWidth={2.5} />
+                  <ShoppingCart size={17} strokeWidth={2.5} />
                   {cartCount > 0 && (
-                    <div className="absolute -top-1.5 -right-1.5 bg-white text-[var(--secondary)] text-[9px] min-w-[15px] h-[15px] rounded-full flex justify-center items-center font-black leading-none">
+                    <div className="absolute -top-1.5 -right-1.5 bg-white text-[var(--secondary)] text-[9px] min-w-[14px] h-[14px] rounded-full flex justify-center items-center font-black leading-none border border-[var(--secondary)]/20">
                       {cartCount > 9 ? '9+' : cartCount}
                     </div>
                   )}
                 </div>
-                <div className="hidden md:flex flex-col items-start">
+                {/* Show Cart label + subtotal on sm screens and above only */}
+                <div className="hidden sm:flex flex-col items-start">
                   <span className="text-[9px] font-black uppercase tracking-widest leading-none opacity-75">Cart</span>
                   <span className="text-sm font-black leading-snug">₹{Number(subtotal || 0).toFixed(2)}</span>
                 </div>

@@ -1,15 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { fetchProducts } from '../services/api';
+import useSEO from '../hooks/useSEO';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
-import { ChevronLeft, Plus, Minus, Star, ShieldCheck, Truck, Clock, BarChart3, Heart, Share2, Info, CheckCircle2, Package, ChevronDown } from 'lucide-react';
+import { ChevronLeft, Plus, Minus, Star, ShieldCheck, Truck, Clock, BarChart3, Heart, Share2, Info, CheckCircle2, Package, ChevronDown, ShoppingCart } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const ProductPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { cartItems, addToCart, updateQuantity, removeFromCart, getTieredPrice } = useCart();
+  const { cartItems, addToCart, updateQuantity, removeFromCart, getTieredPrice, cartCount } = useCart();
   const { user } = useAuth();
   
   const [product, setProduct] = useState(null);
@@ -18,6 +19,16 @@ const ProductPage = () => {
   const [activeImage, setActiveImage] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
   const [selectedVariantId, setSelectedVariantId] = useState(id);
+
+  // Dynamic SEO from loaded product
+  useSEO({
+    title: product ? `${product.name} – Buy Online` : 'Product Details',
+    description: product
+      ? `Buy ${product.name} online on QwikBasket. Fresh, farm-sourced. ₹${product.b2cNewPrice || product.b2cOldPrice || ''}. Fast delivery, best price guaranteed.`
+      : 'Browse fresh farm products on QwikBasket.',
+    canonical: `/product/${id}`,
+    keywords: product ? [product.name, product.category || '', 'buy online', 'fresh delivery'] : [],
+  });
   
   const autoScrollRef = useRef(null);
 
@@ -30,17 +41,28 @@ const ProductPage = () => {
   const showWholesaleData = isWholesaleActive;
 
   // Data Selectors (Safe to run before early returns)
-  const getBaseName = (name) => {
-    if (!name) return '';
-    return name.replace(/\s*[-–]\s*\d+(\.\d+)?\s*(kg|g|l|ml|ltr|litre|piece|pcs|pack)\s*/gi, '').trim().toLowerCase();
-  };
-  const variants = (allProducts.length > 0 && product)
-    ? allProducts.filter(p => p && p.name && getBaseName(p.name) === getBaseName(product.name) && p.packagingSize)
-    : [];
-  const hasVariants = variants.length > 1;
-  const activeProduct = (hasVariants && selectedVariantId !== product?.id)
-    ? variants.find(v => v.id === selectedVariantId) || product
-    : product;
+  let variants = [];
+  try {
+    variants = product?.variants ? (typeof product.variants === 'string' ? JSON.parse(product.variants) : product.variants) : [];
+  } catch(e) { variants = []; }
+
+  const hasVariants = variants.length > 0;
+  const selectedVariant = hasVariants ? variants.find(v => v.id === selectedVariantId) || variants[0] : null;
+
+  // Active product overrides for pricing and stock
+  const activeProduct = product ? {
+    ...product,
+    id: selectedVariant ? `${product.id}_${selectedVariant.id}` : product.id,
+    baseProductId: product.id,
+    variantId: selectedVariant?.id,
+    stock: selectedVariant ? selectedVariant.stock : product.stock,
+    b2cOldPrice: selectedVariant ? selectedVariant.b2cOldPrice : product.b2cOldPrice,
+    b2cNewPrice: selectedVariant ? selectedVariant.b2cNewPrice : product.b2cNewPrice,
+    b2bOldPrice: selectedVariant ? selectedVariant.b2bOldPrice : product.b2bOldPrice,
+    b2bNewPrice: selectedVariant ? selectedVariant.b2bNewPrice : product.b2bNewPrice,
+    minB2BQty: selectedVariant ? selectedVariant.minB2BQty : product.minB2BQty,
+    packagingSize: selectedVariant ? selectedVariant.size : product.packagingSize,
+  } : null;
 
   let images = [];
   try {
@@ -53,11 +75,24 @@ const ProductPage = () => {
     const loadProduct = async () => {
       setLoading(true);
       try {
-        const allProds = await fetchProducts();
+        // Fetch with isAdmin=true to ensure BulkOnly products are also found
+        const allProds = await fetchProducts(true);
         setAllProducts(allProds || []);
-        const p = allProds.find(item => item.id.toString() === id);
+        const baseId = id.split('_')[0];
+        const variantId = id.split('_')[1];
+        const p = allProds.find(item => item.id.toString() === baseId);
         setProduct(p || null);
-        setSelectedVariantId(id);
+        
+        let pVariants = [];
+        try { pVariants = p?.variants ? (typeof p.variants === 'string' ? JSON.parse(p.variants) : p.variants) : []; } catch(e){}
+        
+        if (variantId && pVariants.some(v => v.id === variantId)) {
+          setSelectedVariantId(variantId);
+        } else if (pVariants.length > 0) {
+          setSelectedVariantId(pVariants[0].id);
+        } else {
+          setSelectedVariantId(baseId);
+        }
       } catch (err) {
         console.error(err);
       } finally {
@@ -150,6 +185,14 @@ const ProductPage = () => {
         <div className="flex gap-2">
           <button onClick={() => setIsLiked(!isLiked)} className={`p-2 bg-white rounded-full shadow-sm border border-slate-100 transition-colors ${isLiked ? 'text-red-500' : 'text-slate-400'}`}>
             <Heart size={20} fill={isLiked ? "currentColor" : "none"} />
+          </button>
+          <button onClick={() => navigate('/cart')} className="relative p-2 bg-white rounded-full shadow-sm border border-slate-100 text-slate-700">
+            <ShoppingCart size={20} />
+            {cartCount > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[9px] min-w-[16px] h-[16px] rounded-full flex justify-center items-center font-black leading-none px-1 border border-white">
+                {cartCount}
+              </span>
+            )}
           </button>
           <button className="p-2 bg-white rounded-full shadow-sm border border-slate-100 text-slate-400">
             <Share2 size={20} />
@@ -273,7 +316,7 @@ const ProductPage = () => {
                   >
                     {variants.map(v => (
                       <option key={v.id} value={v.id}>
-                        {v.packagingSize}{v.ratePerUnit ? ` · ${v.ratePerUnit}` : ''} — ₹{Number(showWholesaleData ? v.b2bNewPrice : v.b2cNewPrice || 0).toFixed(2)}
+                        {v.size}{product.ratePerUnit ? ` · ${product.ratePerUnit}` : ''} — ₹{Number(showWholesaleData ? v.b2bNewPrice : v.b2cNewPrice || 0).toFixed(2)}
                       </option>
                     ))}
                   </select>
@@ -326,9 +369,13 @@ const ProductPage = () => {
                       <span className="text-2xl font-black">{currentQty}</span>
                       <button onClick={handlePlus} disabled={currentQty >= stock} className="p-2 hover:bg-black/10 rounded-xl transition disabled:opacity-30"><Plus size={20} strokeWidth={3} /></button>
                     </div>
-                    <div className="text-xs font-bold text-slate-400">
-                      In your basket
-                    </div>
+                    <button 
+                      onClick={() => navigate('/cart')}
+                      className="bg-slate-900 h-16 px-8 rounded-3xl text-white font-black text-base flex items-center justify-center gap-2 shadow-xl hover:scale-105 active:scale-95 transition-all"
+                    >
+                      <span>Go to Cart</span>
+                      <ShoppingCart size={18} />
+                    </button>
                  </div>
                )}
             </div>
@@ -367,24 +414,37 @@ const ProductPage = () => {
       {/* 🚀 Mobile Sticky Action Bar */}
       <div className="md:hidden fixed bottom-6 left-4 right-4 z-[100] animate-slide-up">
         <div className="bg-white/80 backdrop-blur-2xl border border-white/50 p-4 rounded-[32px] shadow-[0_20px_50px_rgba(0,0,0,0.15)] flex items-center justify-center gap-4">
-          <div className="flex-1">
-            <p className="text-[10px] font-black text-slate-400 uppercase ml-1">Price</p>
-            <p className="text-xl font-black text-emerald-600">₹{Number(currentPrice).toFixed(2)}</p>
-          </div>
-          
           {!cartItem ? (
-            <button 
-              onClick={handleAdd}
-              disabled={isOutOfStock}
-              className={`${themeBg} h-14 px-8 rounded-2xl text-white font-black text-sm transition-all active:scale-95 disabled:bg-slate-300 shadow-lg`}
-            >
-              {isOutOfStock ? 'Sold Out' : 'Add to Cart'}
-            </button>
+            <>
+              <div className="flex-1">
+                <p className="text-[10px] font-black text-slate-400 uppercase ml-1">Price</p>
+                <p className="text-xl font-black text-emerald-600">₹{Number(currentPrice).toFixed(2)}</p>
+              </div>
+              <button 
+                onClick={handleAdd}
+                disabled={isOutOfStock}
+                className={`${themeBg} h-14 px-8 rounded-2xl text-white font-black text-sm transition-all active:scale-95 disabled:bg-slate-300 shadow-lg`}
+              >
+                {isOutOfStock ? 'Sold Out' : 'Add to Cart'}
+              </button>
+            </>
           ) : (
-            <div className={`${themeBg} h-14 px-6 rounded-2xl text-white flex items-center gap-8 shadow-lg transition-all`}>
-              <button onClick={handleMinus} className="p-1"><Minus size={18} strokeWidth={4} /></button>
-              <span className="text-lg font-black">{currentQty}</span>
-              <button onClick={handlePlus} disabled={currentQty >= stock} className="p-1 disabled:opacity-30"><Plus size={18} strokeWidth={4} /></button>
+            <div className="flex items-center gap-2.5 w-full">
+              {/* Compact quantity selector */}
+              <div className={`${themeBg} h-14 px-3 rounded-2xl text-white flex items-center justify-between gap-3.5 shadow-lg`}>
+                <button onClick={handleMinus} className="p-1"><Minus size={14} strokeWidth={4} /></button>
+                <span className="text-sm font-black min-w-[12px] text-center">{currentQty}</span>
+                <button onClick={handlePlus} disabled={currentQty >= stock} className="p-1 disabled:opacity-30"><Plus size={14} strokeWidth={4} /></button>
+              </div>
+              
+              {/* Go to Cart button */}
+              <button 
+                onClick={() => navigate('/cart')}
+                className="bg-slate-900 h-14 rounded-2xl text-white font-black text-xs flex items-center justify-center gap-1.5 shadow-lg active:scale-95 transition-all flex-1"
+              >
+                <span>Go to Cart ({currentQty})</span>
+                <ShoppingCart size={14} />
+              </button>
             </div>
           )}
         </div>

@@ -6,6 +6,7 @@ self.addEventListener('activate', (e) => {
   e.waitUntil(self.clients.claim());
 });
 
-self.addEventListener('fetch', (e) => {
-  // Empty fetch handler is enough for Chrome to recognize it as a PWA
+self.addEventListener('fetch', (event) => {
+  // Pass-through to avoid the no-op warning while maintaining PWA installability
+  event.respondWith(fetch(event.request));
 });

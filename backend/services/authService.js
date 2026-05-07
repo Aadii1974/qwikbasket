@@ -5,6 +5,9 @@ const User = require('../models/User');
 class AuthService {
   static async signup(userData) {
     const { name, phone, password, role, companyName, gstNumber, fssaiNumber } = userData;
+    if (!/^[6-9]\d{9}$/.test(phone)) {
+      throw new Error('Invalid Indian mobile number. Must be a 10-digit number starting with 6, 7, 8, or 9.');
+    }
     const existing = await User.findOne({ where: { phone } });
     if (existing) throw new Error('Phone number already registered');
 
@@ -46,6 +49,9 @@ class AuthService {
     if (!user) throw new Error('User not found');
 
     if (phone && phone !== user.phone) {
+      if (!/^[6-9]\d{9}$/.test(phone)) {
+        throw new Error('Invalid Indian mobile number. Must be a 10-digit number starting with 6, 7, 8, or 9.');
+      }
       const existing = await User.findOne({ where: { phone } });
       if (existing) throw new Error('Phone number already in use');
     }

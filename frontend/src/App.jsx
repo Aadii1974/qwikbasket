@@ -62,8 +62,27 @@ const AppContent = ({ isInitialLoad, setIsInitialLoad }) => {
   // PWA Install Prompt State
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [showInstallPopup, setShowInstallPopup] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
 
   useEffect(() => {
+    // 1. Check if app is already installed or running in standalone mode
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+    if (isStandalone) {
+      console.log('📱 QwikBasket is running as an installed PWA. Hiding install prompts.');
+      return; // Stop right here, never show the prompt if already installed!
+    }
+
+    // 2. iOS Detection
+    const userAgent = window.navigator.userAgent.toLowerCase();
+    const isIOSDevice = /ipad|iphone|ipod/.test(userAgent) && !window.MSStream;
+    setIsIOS(isIOSDevice);
+
+    // 3. For iOS, show the installation prompt guide on first load if not dismissed
+    if (isIOSDevice && !localStorage.getItem('pwaPromptDismissed')) {
+      setShowInstallPopup(true);
+    }
+
+    // 4. Android/Chrome beforeinstallprompt handler
     const handler = (e) => {
       e.preventDefault();
       setDeferredPrompt(e);
@@ -76,9 +95,14 @@ const AppContent = ({ isInitialLoad, setIsInitialLoad }) => {
   }, []);
 
   const handleInstallApp = () => {
-    if (deferredPrompt) {
+    if (isIOS) {
+      alert("📱 To install QwikBasket on your iPhone:\n\n1. Tap the 'Share' button (📤 square with an up-arrow) at the bottom of Safari.\n2. Scroll down and choose 'Add to Home Screen'.\n\nEnjoy fresh groceries at your fingertips!");
+    } else if (deferredPrompt) {
       deferredPrompt.prompt();
-      deferredPrompt.userChoice.then(() => {
+      deferredPrompt.userChoice.then((choiceResult) => {
+        if (choiceResult.outcome === 'accepted') {
+          console.log('User accepted the PWA install prompt');
+        }
         setDeferredPrompt(null);
         setShowInstallPopup(false);
       });
@@ -92,7 +116,7 @@ const AppContent = ({ isInitialLoad, setIsInitialLoad }) => {
     window.addEventListener('trigger-pwa-install', triggerInstall);
     return () => window.removeEventListener('trigger-pwa-install', triggerInstall);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [deferredPrompt]);
+  }, [deferredPrompt, isIOS]);
 
   return (
     <Router>
@@ -160,7 +184,10 @@ const AppContent = ({ isInitialLoad, setIsInitialLoad }) => {
 
               <div className="space-y-2 relative z-10">
                 <p className="text-xs text-slate-600 font-medium leading-relaxed">
-                  Install our lightweight app directly to your home screen for lightning-fast shopping, native gestures, and exclusive mobile-only deals!
+                  {isIOS 
+                    ? "Install QwikBasket directly to your iPhone's home screen for lightning-fast shopping and native-app speeds!"
+                    : "Install our lightweight app directly to your home screen for lightning-fast shopping, native gestures, and exclusive mobile-only deals!"
+                  }
                 </p>
                 <div className="bg-emerald-50/50 rounded-2xl p-3 border border-emerald-100/30 text-[11px] font-bold text-slate-700 space-y-1.5">
                   <div className="flex items-center gap-2">
@@ -171,6 +198,12 @@ const AppContent = ({ isInitialLoad, setIsInitialLoad }) => {
                     <span className="text-emerald-500">📱</span>
                     <span>Native app gestures & smooth flow</span>
                   </div>
+                  {isIOS && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-emerald-500">📤</span>
+                      <span>Tap Share ➡️ 'Add to Home Screen'</span>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -179,7 +212,7 @@ const AppContent = ({ isInitialLoad, setIsInitialLoad }) => {
                   onClick={handleInstallApp} 
                   className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-500 hover:opacity-95 text-white text-xs font-black py-3.5 rounded-xl shadow-lg shadow-emerald-200 transition active:scale-[0.98]"
                 >
-                  Install App
+                  {isIOS ? 'Show How to Install' : 'Install App'}
                 </button>
                 <button 
                   onClick={() => { setShowInstallPopup(false); localStorage.setItem('pwaPromptDismissed', 'true'); }} 

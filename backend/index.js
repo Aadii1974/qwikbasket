@@ -53,14 +53,21 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Database Connection & Server Start
 const startServer = async () => {
-
   try {
     await connectDB();
 
     // Prevent 'Too many keys specified' by disabling alter: true 
-    await sequelize.sync();
+    try {
+      await sequelize.sync();
+    } catch (syncErr) {
+      if (process.env.RENDER === 'true') {
+        throw syncErr; // Enforce sync on production / Render
+      } else {
+        console.warn('⚠️ Sequelize sync failed locally. If you need database functionality, ensure MySQL is running:', syncErr.message);
+      }
+    }
+
     app.listen(PORT, () => {
       console.log(`✅ QwikBasket API running at http://localhost:${PORT}`);
     });
@@ -69,6 +76,8 @@ const startServer = async () => {
     process.exit(1);
   }
 };
+
+
 
 // --- Error Handlers ---
 process.on('uncaughtException', (err) => {

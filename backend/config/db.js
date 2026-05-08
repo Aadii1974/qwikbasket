@@ -14,16 +14,24 @@ if (process.env.RENDER === 'true' || process.env.DB_SSL === 'true') {
 
 let sequelize;
 
-if (DATABASE_URL) {
+// Locally, we prefer individual split variables (DB_HOST, DB_USER, etc.) because they handle passwords with 
+// special characters (like @) without needing URL-encoding. On Render, we can use DATABASE_URL.
+if (process.env.RENDER === 'true' && DATABASE_URL) {
   sequelize = new Sequelize(DATABASE_URL, {
     dialect: 'mysql',
     logging: false,
     dialectOptions,
   });
-} else {
+} else if (DB_NAME && DB_USER) {
   sequelize = new Sequelize(DB_NAME, DB_USER, DB_PASS, {
     host: DB_HOST,
     port: process.env.DB_PORT || 3306,
+    dialect: 'mysql',
+    logging: false,
+    dialectOptions,
+  });
+} else if (DATABASE_URL) {
+  sequelize = new Sequelize(DATABASE_URL, {
     dialect: 'mysql',
     logging: false,
     dialectOptions,
@@ -53,13 +61,22 @@ const connectDB = async () => {
   }
 
   try {
-    await sequelize.authenticate();
-    console.log(`✅ MySQL Database connected successfully.`);
+    if (sequelize) {
+      await sequelize.authenticate();
+      console.log(`✅ MySQL Database connected successfully.`);
+    } else {
+      throw new Error('Sequelize was not initialized. Check your database credentials in .env');
+    }
   } catch (err) {
     console.error('❌ Database connection/authentication failed:', err.message);
-    throw err; // Rethrow to prevent index.js from trying to run sequelize.sync() on a broken connection
+    if (process.env.RENDER === 'true') {
+      throw err; // In production/Render, crash so the deployment environment alerts us
+    } else {
+      console.warn('⚠️ Local Database is currently offline or misconfigured. Continuing server startup anyway...');
+    }
   }
 };
 
 module.exports = { sequelize, connectDB };
+
 

@@ -27,6 +27,8 @@ const Admin = () => {
   const [pendingUsers, setPendingUsers] = useState([]);
   const [orders, setOrders] = useState([]);
   const [orderFilter, setOrderFilter] = useState('all');
+  const [orderStartDate, setOrderStartDate] = useState('');
+  const [orderEndDate, setOrderEndDate] = useState('');
   const [expandedOrderId, setExpandedOrderId] = useState(null);
   const [deliveryAgents, setDeliveryAgents] = useState([]);
   const [settlementData, setSettlementData] = useState([]);
@@ -923,7 +925,20 @@ const Admin = () => {
                       'Delivered': 'bg-green-100 text-green-700',
                       'Cancelled': 'bg-red-100 text-red-700',
                     };
-                    const filteredOrders = orderFilter === 'all' ? orders : orders.filter(o => o.status === orderFilter);
+                    // Apply filtering by status and dates
+                    let processedOrders = orders;
+                    if (orderFilter !== 'all') {
+                      processedOrders = processedOrders.filter(o => o.status === orderFilter);
+                    }
+                    if (orderStartDate) {
+                      const start = new Date(orderStartDate + 'T00:00:00');
+                      processedOrders = processedOrders.filter(o => new Date(o.createdAt) >= start);
+                    }
+                    if (orderEndDate) {
+                      const end = new Date(orderEndDate + 'T23:59:59');
+                      processedOrders = processedOrders.filter(o => new Date(o.createdAt) <= end);
+                    }
+                    const filteredOrders = processedOrders;
 
                     const handleStatusChange = async (orderId, newStatus) => {
                       try {
@@ -934,6 +949,228 @@ const Admin = () => {
                       }
                     };
 
+                    const handleDownloadPDF = () => {
+                      const printWindow = window.open('', '_blank', 'width=1100,height=800');
+                      if (!printWindow) {
+                        alert('Please allow popups to download reports.');
+                        return;
+                      }
+
+                      let rowsHtml = '';
+                      filteredOrders.forEach((order) => {
+                        const itemsList = order.items?.map(item => `${item.name} (${item.unit}) x${item.quantity}`).join(', ') || '';
+                        rowsHtml += `
+                          <tr>
+                            <td style="font-weight: 800;">${order.orderNumber || order.id.slice(0, 8)}</td>
+                            <td>${new Date(order.createdAt).toLocaleDateString('en-IN')} ${new Date(order.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</td>
+                            <td>
+                              <strong>${order.deliveryAddress?.fullName || 'N/A'}</strong><br>
+                              <small style="color: #64748b;">Ph: ${order.deliveryAddress?.phone || ''}</small>
+                            </td>
+                            <td class="items">${itemsList}</td>
+                            <td style="font-weight: 700;">₹${order.totalAmount ? Number(order.totalAmount).toFixed(2) : '0.00'}</td>
+                            <td><span class="status-badge ${order.status.toLowerCase().replace(/\s+/g, '-')}">${order.status}</span></td>
+                          </tr>
+                        `;
+                      });
+
+                      const totalSales = filteredOrders.reduce((sum, o) => sum + (Number(o.totalAmount) || 0), 0);
+
+                      const htmlContent = `
+                        <html>
+                          <head>
+                            <title>QwikBasket Orders Report</title>
+                            <style>
+                              @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&display=swap');
+                              body {
+                                font-family: 'Outfit', sans-serif;
+                                color: #0f172a;
+                                padding: 40px;
+                                margin: 0;
+                                background-color: #ffffff;
+                              }
+                              .header {
+                                display: flex;
+                                justify-content: space-between;
+                                align-items: center;
+                                border-bottom: 2px solid #e2e8f0;
+                                padding-bottom: 20px;
+                                margin-bottom: 30px;
+                              }
+                              .logo {
+                                font-size: 26px;
+                                font-weight: 900;
+                                color: #16a34a;
+                                letter-spacing: -0.02em;
+                              }
+                              .subtitle {
+                                font-size: 13px;
+                                color: #64748b;
+                                font-weight: 600;
+                                text-transform: uppercase;
+                                letter-spacing: 0.1em;
+                                margin-top: 4px;
+                              }
+                              .report-info {
+                                text-align: right;
+                                font-size: 13px;
+                                color: #475569;
+                                font-weight: 600;
+                                line-height: 1.5;
+                              }
+                              .meta-grid {
+                                display: grid;
+                                grid-template-cols: repeat(3, 1fr);
+                                gap: 20px;
+                                margin-bottom: 30px;
+                              }
+                              .meta-card {
+                                background: #f8fafc;
+                                padding: 20px;
+                                border-radius: 16px;
+                                border: 1px solid #e2e8f0;
+                              }
+                              .meta-card h4 {
+                                margin: 0 0 6px 0;
+                                font-size: 11px;
+                                text-transform: uppercase;
+                                letter-spacing: 0.08em;
+                                color: #64748b;
+                                font-weight: 800;
+                              }
+                              .meta-card p {
+                                margin: 0;
+                                font-size: 22px;
+                                font-weight: 900;
+                                color: #0f172a;
+                              }
+                              table {
+                                width: 100%;
+                                border-collapse: collapse;
+                                margin-bottom: 30px;
+                              }
+                              th {
+                                background-color: #0f172a;
+                                color: white;
+                                font-size: 11px;
+                                font-weight: 800;
+                                text-transform: uppercase;
+                                letter-spacing: 0.08em;
+                                padding: 14px 16px;
+                                text-align: left;
+                              }
+                              td {
+                                padding: 14px 16px;
+                                border-bottom: 1px solid #e2e8f0;
+                                font-size: 13px;
+                                color: #334155;
+                                line-height: 1.5;
+                              }
+                              tr:nth-child(even) {
+                                background-color: #f8fafc;
+                              }
+                              .items {
+                                font-size: 12px;
+                                color: #475569;
+                                font-weight: 500;
+                                max-width: 350px;
+                              }
+                              .status-badge {
+                                display: inline-block;
+                                padding: 4px 10px;
+                                border-radius: 100px;
+                                font-size: 10px;
+                                font-weight: 800;
+                                text-transform: uppercase;
+                                letter-spacing: 0.05em;
+                              }
+                              .status-badge.pending { background: #ffedd5; color: #c2410c; }
+                              .status-badge.processing { background: #dbeafe; color: #1d4ed8; }
+                              .status-badge.packed { background: #e0e7ff; color: #4338ca; }
+                              .status-badge.shipped { background: #f3e8ff; color: #7e22ce; }
+                              .status-badge.out-for-delivery { background: #ecfeff; color: #0e7490; }
+                              .status-badge.delivered { background: #dcfce7; color: #15803d; }
+                              .status-badge.cancelled { background: #fee2e2; color: #b91c1c; }
+                              .footer {
+                                text-align: center;
+                                font-size: 11px;
+                                color: #94a3b8;
+                                border-top: 1px solid #e2e8f0;
+                                padding-top: 25px;
+                                margin-top: 50px;
+                                font-weight: 600;
+                              }
+                              @media print {
+                                body { padding: 0; }
+                                .no-print { display: none; }
+                              }
+                            </style>
+                          </head>
+                          <body>
+                            <div class="header">
+                              <div>
+                                <div class="logo">QwikBasket</div>
+                                <div class="subtitle">Official Orders Report & Manifest</div>
+                              </div>
+                              <div class="report-info">
+                                Generated: ${new Date().toLocaleDateString('en-IN')}<br>
+                                Time: ${new Date().toLocaleTimeString('en-IN')}
+                              </div>
+                            </div>
+
+                            <div class="meta-grid">
+                              <div class="meta-card">
+                                <h4>Total Orders</h4>
+                                <p>${filteredOrders.length}</p>
+                              </div>
+                              <div class="meta-card">
+                                <h4>Total Revenue</h4>
+                                <p>₹${totalSales.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                              </div>
+                              <div class="meta-card">
+                                <h4>Date Filter Range</h4>
+                                <p style="font-size: 14px; margin-top: 6px;">${orderStartDate ? new Date(orderStartDate).toLocaleDateString('en-IN') : 'All History'} — ${orderEndDate ? new Date(orderEndDate).toLocaleDateString('en-IN') : 'Today'}</p>
+                              </div>
+                            </div>
+
+                            <table>
+                              <thead>
+                                <tr>
+                                  <th>Order #</th>
+                                  <th>Date & Time</th>
+                                  <th>Customer Info</th>
+                                  <th>Items Manifest</th>
+                                  <th>Total Paid</th>
+                                  <th>Status</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                ${rowsHtml || '<tr><td colspan="6" style="text-align: center; color: #94a3b8;">No orders match the selected filters.</td></tr>'}
+                              </tbody>
+                            </table>
+
+                            <div class="footer">
+                              QwikBasket Administrative Operations Hub • Confidential Document
+                            </div>
+
+                            <script>
+                              window.onload = function() {
+                                setTimeout(function() {
+                                  window.print();
+                                  window.onafterprint = function() {
+                                    window.close();
+                                  };
+                                }, 300);
+                              }
+                            </script>
+                          </body>
+                        </html>
+                      `;
+
+                      printWindow.document.write(htmlContent);
+                      printWindow.document.close();
+                    };
+
                     return (
                       <div className="animate-fade-in">
                         <div className="flex flex-wrap justify-between items-start gap-4 mb-8">
@@ -942,6 +1179,46 @@ const Admin = () => {
                             <p className="text-gray-500 font-medium">View and update the status of all customer orders.</p>
                           </div>
                           <button onClick={loadInitialData} className="bg-slate-100 text-slate-700 px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-slate-200 transition">↻ Refresh</button>
+                        </div>
+
+                        {/* Date Filters & PDF Download Actions */}
+                        <div className="bg-slate-50 p-6 rounded-[24px] border border-gray-100 flex flex-col lg:flex-row lg:items-center justify-between gap-5 mb-8 shadow-sm">
+                          <div className="flex flex-wrap items-center gap-4">
+                            <div className="flex flex-col gap-1">
+                              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">From Date</span>
+                              <input 
+                                type="date" 
+                                value={orderStartDate} 
+                                onChange={(e) => setOrderStartDate(e.target.value)}
+                                className="border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-700 outline-none focus:border-[var(--secondary)] bg-white shadow-sm transition cursor-pointer"
+                              />
+                            </div>
+                            <div className="flex flex-col gap-1">
+                              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">To Date</span>
+                              <input 
+                                type="date" 
+                                value={orderEndDate} 
+                                onChange={(e) => setOrderEndDate(e.target.value)}
+                                className="border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-700 outline-none focus:border-[var(--secondary)] bg-white shadow-sm transition cursor-pointer"
+                              />
+                            </div>
+                            {(orderStartDate || orderEndDate) && (
+                              <button 
+                                onClick={() => { setOrderStartDate(''); setOrderEndDate(''); }}
+                                className="lg:mt-5 text-xs font-black text-red-500 hover:text-red-700 hover:underline transition self-end"
+                              >
+                                Clear Date Filter
+                              </button>
+                            )}
+                          </div>
+
+                          <button 
+                            onClick={handleDownloadPDF} 
+                            disabled={filteredOrders.length === 0}
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs uppercase tracking-widest px-6 py-3.5 rounded-xl shadow-lg transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                          >
+                            📥 Download PDF Report
+                          </button>
                         </div>
 
                         {/* Filter Tabs */}

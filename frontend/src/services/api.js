@@ -1,4 +1,5 @@
-const API_URL = '/api';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
+
 
 // Helper for auth headers — must be before any functions that use it
 const getAuthHeaders = (contentType = 'application/json') => {

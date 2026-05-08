@@ -1,4 +1,4 @@
-const { sequelize, User } = require('./models');
+const { sequelize, User } = require('../models');
 const bcrypt = require('bcryptjs');
 
 // To change the password, set the target phone and new password here:

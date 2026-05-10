@@ -3001,7 +3001,7 @@ const Admin = () => {
                          </div>
                          <div>
                            <label className="text-xs font-black uppercase text-slate-400 tracking-wider">Status</label>
-                           <select name="isActive" defaultValue={editingValuePack?.isActive ? 'true' : 'false'} className="w-full mt-1 p-4 rounded-2xl bg-slate-50 border-2 border-slate-100 outline-none font-bold">
+                           <select name="isActive" defaultValue={editingValuePack ? (editingValuePack.isActive ? 'true' : 'false') : 'true'} className="w-full mt-1 p-4 rounded-2xl bg-slate-50 border-2 border-slate-100 outline-none font-bold">
                               <option value="true">Active</option>
                               <option value="false">Inactive</option>
                            </select>

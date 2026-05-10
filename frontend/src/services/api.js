@@ -137,6 +137,14 @@ export const fetchProducts = async (isAdmin = false) => {
   } catch (e) { return []; }
 };
 
+export const fetchProductById = async (id) => {
+  try {
+    const res = await fetch(`${API_URL}/products/${id}`);
+    const data = await res.json();
+    return data.data || null;
+  } catch (e) { return null; }
+};
+
 export const fetchBulkProducts = async () => {
   try {
     const res = await fetch(`${API_URL}/products/bulk`);

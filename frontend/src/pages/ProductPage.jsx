@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { fetchProducts } from '../services/api';
+import { fetchProductById } from '../services/api';
 import useSEO from '../hooks/useSEO';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
@@ -75,12 +75,11 @@ const ProductPage = () => {
     const loadProduct = async () => {
       setLoading(true);
       try {
-        // Fetch with isAdmin=true to ensure BulkOnly products are also found
-        const allProds = await fetchProducts(true);
-        setAllProducts(allProds || []);
         const baseId = id.split('_')[0];
         const variantId = id.split('_')[1];
-        const p = allProds.find(item => item.id.toString() === baseId);
+        
+        // Highly optimized: load only the requested product directly from the database by ID
+        const p = await fetchProductById(baseId);
         setProduct(p || null);
         
         let pVariants = [];

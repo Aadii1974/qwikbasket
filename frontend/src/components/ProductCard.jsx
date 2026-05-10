@@ -13,6 +13,7 @@ const ProductCard = ({ product, allProducts = [], disableClick = false }) => {
   const { cartItems, addToCart, updateQuantity, removeFromCart, getTieredPrice } = useCart();
   const [isAdding, setIsAdding] = useState(false);
   const [activeImage, setActiveImage] = useState(0);
+  const [isHovered, setIsHovered] = useState(false);
   const [selectedVariantId, setSelectedVariantId] = useState(product?.id);
 
   // Role Checks
@@ -79,15 +80,15 @@ const ProductCard = ({ product, allProducts = [], disableClick = false }) => {
     images = typeof activeProduct.images === 'string' ? JSON.parse(activeProduct.images) : (Array.isArray(activeProduct.images) ? activeProduct.images : []);
   } catch (e) { images = []; }
 
-  // Auto-scroll images
+  // Auto-scroll images on hover only — massive load speed and CPU performance optimization!
   useEffect(() => {
-    if (images.length > 1 && !isOutOfStock) {
+    if (images.length > 1 && !isOutOfStock && isHovered) {
       const interval = setInterval(() => {
         setActiveImage((prev) => (prev + 1) % images.length);
-      }, 3500);
+      }, 2000); // 2 seconds feels fast and highly premium on hover
       return () => clearInterval(interval);
     }
-  }, [images.length, isOutOfStock]);
+  }, [images.length, isOutOfStock, isHovered]);
 
   const handleAdd = (e) => {
     e.preventDefault(); e.stopPropagation();
@@ -122,6 +123,8 @@ const ProductCard = ({ product, allProducts = [], disableClick = false }) => {
   return (
     <div
       onClick={() => !isOutOfStock && !disableClick && navigate(`/product/${product.id}`)}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => { setIsHovered(false); setActiveImage(0); }}
       className={`card-premium group relative flex flex-col w-full h-full overflow-hidden select-none
         ${showWholesaleTheme ? 'border-red-100' : ''}
         ${isOutOfStock ? 'opacity-70 cursor-not-allowed' : (disableClick ? 'cursor-default' : 'cursor-pointer')}`}

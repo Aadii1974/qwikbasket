@@ -148,25 +148,28 @@ const deleteProduct = async (req, res) => {
 
 const getHomeSections = async (req, res) => {
   try {
-    const products = await Product.findAll({
-      where: { isBulkOnly: false }
-    });
-
-    // Latest Additions
-    const latest = [...products]
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-      .slice(0, 10);
-
-    // Trending Products (randomly select or use rating)
-    const trending = [...products]
-      .sort((a, b) => (b.rating || 0) - (a.rating || 0))
-      .slice(0, 10);
-
-    // Most Purchased (For now, just some random ones until we have real sales data)
-    // In a real app, you'd join with Orders or have a salesCount field
-    const mostPurchased = [...products]
-      .sort(() => 0.5 - Math.random())
-      .slice(0, 10);
+    // Highly optimized: fetch only the required 10 items per section directly from the database
+    // using SQL level order and limit, reducing database memory usage and network overhead.
+    const [latest, trending, mostPurchased] = await Promise.all([
+      Product.findAll({
+        where: { isBulkOnly: false },
+        order: [['createdAt', 'DESC']],
+        limit: 10
+      }),
+      Product.findAll({
+        where: { isBulkOnly: false },
+        order: [
+          [sequelize.literal('ISNULL(rating)'), 'ASC'],
+          ['rating', 'DESC']
+        ],
+        limit: 10
+      }),
+      Product.findAll({
+        where: { isBulkOnly: false },
+        order: [sequelize.literal('RAND()')],
+        limit: 10
+      })
+    ]);
 
     res.status(200).json({
       success: true,
@@ -177,6 +180,7 @@ const getHomeSections = async (req, res) => {
       }
     });
   } catch (err) {
+    console.error('❌ getHomeSections error:', err.message);
     res.status(500).json({ success: false, error: err.message });
   }
 };
@@ -260,4 +264,17 @@ const validateCartStock = async (req, res) => {
   }
 };
 
-module.exports = { getProducts, getBulkProducts, createProduct, updateProduct, deleteProduct, getHomeSections, getRecommendations, validateCartStock };
+const getProductById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const product = await Product.findByPk(id);
+    if (!product) {
+      return res.status(404).json({ success: false, error: 'Product not found' });
+    }
+    res.status(200).json({ success: true, data: product });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+module.exports = { getProducts, getProductById, getBulkProducts, createProduct, updateProduct, deleteProduct, getHomeSections, getRecommendations, validateCartStock };

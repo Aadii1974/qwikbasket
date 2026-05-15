@@ -58,12 +58,12 @@ const StorePage = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useSEO({
-    title: storeDetails ? `${storeDetails.name} – Local Fresh Grocery Store` : 'Local QwikBasket Store',
+    title: storeDetails ? `${storeDetails.name} – Local Fresh Organic Grocery Store` : 'Local Real Farms Store',
     description: storeDetails 
-      ? `Visit our local ${storeDetails.name} branch on QwikBasket. Get lightning-fast, 45-60 min delivery of fresh organic groceries, dairy, and farm produce from this store.`
-      : 'Explore your nearest QwikBasket local organic grocery store for direct-to-farm deliveries.',
+      ? `Visit our local ${storeDetails.name} branch on Real Farms. Get lightning-fast, 45-60 min delivery of fresh organic groceries, dairy, and farm produce from this store.`
+      : 'Explore your nearest Real Farms local organic grocery store for direct-to-farm deliveries.',
     canonical: `/store/${id}`,
-    keywords: storeDetails ? [`QwikBasket ${storeDetails.name}`, `grocery store near me`, `organic delivery ${storeDetails.name}`] : [],
+    keywords: storeDetails ? [`Real Farms ${storeDetails.name}`, `organic grocery store near me`, `organic delivery ${storeDetails.name}`] : [],
   });
 
   // Parse visible sections from store

@@ -564,7 +564,7 @@ const Admin = () => {
                        <div className="flex justify-between items-end mb-8">
                           <div>
                             <h2 className="text-3xl font-black mb-2 text-slate-900 tracking-tight">Business Overview</h2>
-                            <p className="text-gray-500 font-medium">Real-time metrics for QwikBasket by Real Farms sales and operations.</p>
+                            <p className="text-gray-500 font-medium">Real-time metrics for Real Farms sales and operations.</p>
                           </div>
                           <div className="bg-emerald-50 text-emerald-700 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest border border-emerald-100 flex items-center gap-2">
                              <TrendingUp size={14}/> Active Performance
@@ -979,7 +979,7 @@ const Admin = () => {
                       const htmlContent = `
                         <html>
                           <head>
-                            <title>QwikBasket Orders Report</title>
+                            <title>Real Farms Orders Report</title>
                             <style>
                               @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&display=swap');
                               body {
@@ -1109,7 +1109,7 @@ const Admin = () => {
                           <body>
                             <div class="header">
                               <div>
-                                <div class="logo">QwikBasket</div>
+                                <div class="logo">Real Farms</div>
                                 <div class="subtitle">Official Orders Report & Manifest</div>
                               </div>
                               <div class="report-info">
@@ -1150,7 +1150,7 @@ const Admin = () => {
                             </table>
 
                             <div class="footer">
-                              QwikBasket Administrative Operations Hub • Confidential Document
+                              Real Farms Administrative Operations Hub • Confidential Document
                             </div>
 
                             <script>

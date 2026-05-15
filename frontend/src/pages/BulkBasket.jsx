@@ -13,9 +13,9 @@ import useSEO from '../hooks/useSEO';
 const BulkBasket = () => {
   useSEO({
     title: 'Build Your Bulk Basket – Wholesale Grocery Prices',
-    description: 'Buy groceries in bulk at wholesale prices on QwikBasket. Direct farm sourcing, zero middlemen. Perfect for homes, restaurants, and businesses.',
+    description: 'Buy groceries in bulk at wholesale prices on Real Farms. Direct farm sourcing, zero middlemen. Perfect for homes, restaurants, and businesses.',
     canonical: '/bulk',
-    keywords: ['bulk grocery', 'wholesale grocery', 'bulk order', 'B2B grocery', 'warehouse prices', 'restaurant grocery supply'],
+    keywords: ['bulk grocery India', 'wholesale grocery delivery', 'bulk order online', 'B2B grocery India', 'warehouse prices grocery', 'restaurant grocery supply', 'bulk vegetables', 'bulk dairy delivery'],
   });
   const navigate = useNavigate();
   const { 

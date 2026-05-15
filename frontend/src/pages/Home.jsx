@@ -503,7 +503,7 @@ const DeliverySection = ({ deliveryImage }) => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
         {/* Left — Text & Trust Points */}
         <div>
-          <span className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--secondary)] mb-2 block">Why QwikBasket</span>
+          <span className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--secondary)] mb-2 block">Why Real Farms</span>
           <h2 className="text-2xl md:text-4xl font-[900] text-slate-900 heading-tight mb-6 leading-tight">
             Delivering Quality &<br />
             <span className="text-[var(--secondary)]">Building Trust</span>
@@ -589,10 +589,10 @@ const DeliverySection = ({ deliveryImage }) => {
 const Home = () => {
   const { user } = useAuth();
   useSEO({
-    title: 'Fresh Grocery & Farm Delivery – Order Online',
-    description: 'QwikBasket delivers fresh groceries, dairy, fruits & vegetables to your door in 45–60 mins. Qwik & Smart Delivery. Best farm-fresh prices. Order now!',
+    title: 'Fresh Organic Grocery & Farm Delivery – Order Online',
+    description: 'Real Farms delivers fresh organic groceries, dairy, fruits & vegetables straight from the farm to your doorstep in 45–60 mins. Same-day & scheduled delivery. Best farm-direct prices. Order now!',
     canonical: '/',
-    keywords: ['grocery delivery', 'farm fresh delivery', 'online grocery', 'same day delivery', 'fresh vegetables online', 'dairy delivery'],
+    keywords: ['grocery delivery India', 'organic farm fresh delivery', 'online grocery', 'same day grocery delivery', 'fresh vegetables online', 'dairy delivery India', 'farm to doorstep', 'organic food India', 'buy groceries online', 'fresh milk delivery'],
   });
   const isB2B = user?.role === 'b2b';
   const [products, setProducts] = useState([]);

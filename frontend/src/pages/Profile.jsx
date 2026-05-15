@@ -214,7 +214,7 @@ const downloadInvoice = (order) => {
     <body>
       <div class="header">
         <div>
-          <div class="brand">Qwik<span>Basket</span> <span class="badge">by Real Farms</span></div>
+          <div class="brand">Real<span>Farms</span></div>
           <div style="margin-top: 8px; color: #64748b; font-size: 13px; font-weight: 600;">Freshness Delivered — Quality over Time</div>
         </div>
         <div style="text-align: right;">
@@ -271,7 +271,7 @@ const downloadInvoice = (order) => {
         ${order.smallCartFee ? `<div style="color: #64748b; font-weight: 700; margin-bottom: 8px;">Service Fee: ₹${Number(order.smallCartFee).toFixed(2)}</div>` : ''}
         <div class="grand-total">Grand Total: ₹${Number(order.totalAmount || 0).toFixed(2)}</div>
       </div>
-      <div class="footer">Thank you for shopping with QwikBasket by Real Farms! For support, contact us at support@qwikbasket.com</div>
+      <div class="footer">Thank you for shopping with Real Farms! For support, contact us at support@realfarms.in</div>
     </body>
     </html>
   `;

@@ -16,8 +16,8 @@ const CategoryPage = () => {
   useSEO({
     title: category ? `${category.name} – Shop Fresh Online` : 'Fresh Grocery Category',
     description: category 
-      ? `Buy fresh, organic ${category.name} online from QwikBasket. Direct farm-sourced premium quality produce delivered to your doorstep in 45–60 mins.`
-      : 'Browse our collection of fresh groceries and local organic farm produce on QwikBasket.',
+      ? `Buy fresh, organic ${category.name} online from Real Farms. Direct farm-sourced premium quality produce delivered to your doorstep in 45–60 mins.`
+      : 'Browse our collection of fresh organic groceries and local farm produce on Real Farms.',
     canonical: `/category/${slug}`,
     keywords: category ? [`buy ${category.name}`, `fresh ${category.name}`, `organic ${category.name} delivery`] : [],
   });

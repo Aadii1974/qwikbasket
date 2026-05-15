@@ -6,7 +6,7 @@ import { Mail, Lock, User, Briefcase, ChevronRight, Eye, EyeOff, Building, FileT
 import { motion, AnimatePresence } from 'framer-motion';
 
 const Login = () => {
-  useSEO({ title: 'Sign In or Register', description: 'Log in or create your QwikBasket account to order fresh groceries, track deliveries and earn Farmer Coins.', canonical: '/login' });
+  useSEO({ title: 'Sign In or Register', description: 'Log in or create your Real Farms account to order fresh organic groceries, track deliveries and earn Farmer Coins.', canonical: '/login' });
   const [isLogin, setIsLogin] = useState(true);
   const [role, setRole] = useState('b2c');
   const [showPassword, setShowPassword] = useState(false);

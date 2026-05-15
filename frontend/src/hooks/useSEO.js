@@ -1,14 +1,14 @@
 import { useEffect } from 'react';
 
-const SITE_NAME = 'QwikBasket by Real Farms';
-const BASE_URL  = 'https://qwikbasket.in';
+const SITE_NAME = 'Real Farms';
+const BASE_URL  = 'https://realfarms.in';
 const OG_IMAGE  = `${BASE_URL}/og-image.jpg`;
 
 /**
  * useSEO — sets page-level SEO meta dynamically.
  *
  * @param {object} options
- * @param {string} options.title        - Page-specific title (appended with " | QwikBasket")
+ * @param {string} options.title        - Page-specific title (appended with " | Real Farms")
  * @param {string} options.description  - Meta description
  * @param {string} [options.canonical]  - Canonical path e.g. "/search"
  * @param {string} [options.ogImage]    - Override OG image URL
@@ -74,7 +74,7 @@ const useSEO = ({
     canonicalEl.setAttribute('href', canonicalUrl);
 
     // ── Keywords ───────────────────────────────────────────
-    const baseKeywords = 'online grocery delivery, fresh vegetables, dairy delivery, farm fresh, QwikBasket, Real Farms';
+    const baseKeywords = 'Real Farms, online grocery delivery India, fresh organic vegetables, dairy delivery, farm fresh groceries, farm to doorstep, organic food delivery, buy vegetables online, fresh fruits delivery, same day grocery delivery, zero middleman grocery, organic produce India, grocery app India, fresh grocery delivery';
     const allKeywords = keywords.length > 0 ? `${keywords.join(', ')}, ${baseKeywords}` : baseKeywords;
     setMeta('meta[name="keywords"]', 'content', allKeywords);
 

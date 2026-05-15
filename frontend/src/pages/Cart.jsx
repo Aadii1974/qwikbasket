@@ -631,7 +631,7 @@ const TruckLoadingAnimation = ({ onFinish }) => {
 
             <rect x="30" y="20" width="112" height="65" rx="8" fill="#044f1d" />
             
-            <text x="45" y="48" fill="#ffdc4e" fontSize="11" fontWeight="900" fontFamily="sans-serif" letterSpacing="1">QWIKBASKET</text>
+            <text x="45" y="48" fill="#ffdc4e" fontSize="11" fontWeight="900" fontFamily="sans-serif" letterSpacing="1">REAL FARMS</text>
             <text x="45" y="60" fill="#c8ffd6" fontSize="7" fontWeight="800" fontFamily="sans-serif" letterSpacing="0.5">🌿 Farm Fresh Direct</text>
             <path d="M30 45H142" stroke="rgba(255,255,255,0.08)" strokeWidth="2" />
             <path d="M30 65H142" stroke="rgba(255,255,255,0.08)" strokeWidth="2" />
@@ -984,7 +984,7 @@ const Cart = () => {
         key: settings.razorpayKeyId || '',
         amount: rzpRes.data.amount,
         currency: 'INR',
-        name: 'QwikBasket by Real Farms',
+        name: 'Real Farms',
         description: `${deliveryType} Delivery Order`,
         order_id: rzpRes.data.id,
         prefill: { name: user?.name || '', contact: user?.phone || '' },
@@ -1105,7 +1105,7 @@ const Cart = () => {
     const html = `<html><head><title>Invoice - ${o.orderNumber}</title>
     <style>* { box-sizing:border-box; margin:0; padding:0; }
     body { font-family: system-ui; padding:48px; color:#1e293b; }
-      <div><div class="brand">Qwik<span>Basket</span></div><div style="color:#64748b;font-size:13px;font-weight:600;margin-top:4px">by Real Farms — Delivering Quality over Time</div></div>
+      <div><div class="brand">Real<span>Farms</span></div><div style="color:#64748b;font-size:13px;font-weight:600;margin-top:4px">Fresh Organic — Delivering Quality over Time</div></div>
       <div style="text-align:right"><div style="font-size:11px;font-weight:800;text-transform:uppercase;color:#94a3b8;margin-bottom:4px">Invoice</div>
       <div style="font-size:20px;font-weight:900">#${o.orderNumber}</div>
       <div style="color:#64748b;font-size:12px;margin-top:4px">${new Date(o.createdAt).toLocaleDateString('en-IN', { day:'numeric', month:'long', year:'numeric' })}</div>
@@ -1129,7 +1129,7 @@ const Cart = () => {
     ${o.smallCartFee ? `<div style="color:#64748b;font-weight:700;margin-bottom:6px">Service Fee: ₹${Number(o.smallCartFee).toFixed(2)}</div>` : ''}
     <div style="font-size:22px;font-weight:900;color:#1e293b;margin-top:12px;border-top:2px solid #e2e8f0;padding-top:12px">Grand Total: ₹${Number(o.totalAmount||0).toFixed(2)}</div>
     </div>
-    <div style="margin-top:40px;padding-top:24px;border-top:1px solid #e2e8f0;text-align:center;color:#94a3b8;font-size:12px;font-weight:600">Thank you for choosing QwikBasket by Real Farms! For support contact us at support@qwikbasket.com</div>
+    <div style="margin-top:40px;padding-top:24px;border-top:1px solid #e2e8f0;text-align:center;color:#94a3b8;font-size:12px;font-weight:600">Thank you for choosing Real Farms! For support contact us at support@realfarms.in</div>
     </body></html>`;
     const win = window.open('', '', 'width=900,height=700');
     win.document.write(html);

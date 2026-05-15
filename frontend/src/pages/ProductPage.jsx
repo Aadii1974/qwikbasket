@@ -24,8 +24,8 @@ const ProductPage = () => {
   useSEO({
     title: product ? `${product.name} – Buy Online` : 'Product Details',
     description: product
-      ? `Buy ${product.name} online on QwikBasket. Fresh, farm-sourced. ₹${product.b2cNewPrice || product.b2cOldPrice || ''}. Fast delivery, best price guaranteed.`
-      : 'Browse fresh farm products on QwikBasket.',
+      ? `Buy ${product.name} online on Real Farms. Fresh, farm-sourced organic produce. ₹${product.b2cNewPrice || product.b2cOldPrice || ''}. Fast delivery, best price guaranteed.`
+      : 'Browse fresh organic farm products on Real Farms.',
     canonical: `/product/${id}`,
     keywords: product ? [product.name, product.category || '', 'buy online', 'fresh delivery'] : [],
   });

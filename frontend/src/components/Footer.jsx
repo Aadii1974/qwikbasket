@@ -17,10 +17,10 @@ const Footer = () => {
                  <div className="w-10 h-10 bg-[var(--secondary)] rounded-xl flex items-center justify-center text-white shadow-lg shadow-green-900/50">
                     <ShoppingBag size={22} />
                  </div>
-                 <span className="text-2xl font-black text-white tracking-tighter">QwikBasket</span>
+                 <span className="text-2xl font-black text-white tracking-tighter">Real Farms</span>
               </div>
               <p className="text-sm font-medium leading-relaxed max-w-xs text-slate-400">
-                 Experience the future of grocery shopping. Fresh produce from Real Farms delivered to your doorstep in minutes.
+                 Experience the future of grocery shopping. Fresh organic produce directly from certified Indian farms, delivered to your doorstep in minutes.
               </p>
               <div className="flex gap-4">
                  {[Instagram, Twitter, Facebook, Youtube].map((Icon, i) => (
@@ -56,8 +56,8 @@ const Footer = () => {
               <h4 className="text-white font-black text-sm uppercase tracking-[0.2em] mb-8">Why Us?</h4>
               <div className="space-y-6">
                  {[
-                    { icon: <Zap size={18} />, title: 'Qwik Delivery', desc: '10-20 mins avg' },
-                    { icon: <ShieldCheck size={18} />, title: 'Verified Quality', desc: 'Real Farms Fresh' }
+                    { icon: <Zap size={18} />, title: 'Fast Delivery', desc: '45-60 mins avg' },
+                    { icon: <ShieldCheck size={18} />, title: 'Verified Quality', desc: 'Farm Certified Fresh' }
                  ].map((feat, i) => (
                     <div key={i} className="flex gap-4">
                        <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-[var(--secondary)]">
@@ -76,7 +76,7 @@ const Footer = () => {
         {/* Footer Bottom */}
         <div className="pt-12 border-t border-slate-800 flex flex-col md:flex-row items-center justify-between gap-8">
            <div className="flex flex-col md:flex-row items-center gap-4 text-xs font-black uppercase tracking-widest text-slate-500">
-              <p>© 2026 QwikBasket by Real Farms</p>
+              <p>© 2026 Real Farms</p>
               <div className="hidden md:block w-1 h-1 bg-slate-700 rounded-full"></div>
               <p>Privacy Policy</p>
               <div className="hidden md:block w-1 h-1 bg-slate-700 rounded-full"></div>
@@ -91,7 +91,7 @@ const Footer = () => {
            </div>
 
            <div className="flex items-center gap-2 text-xs font-bold">
-              Built with <Heart className="text-red-500 fill-red-500 animate-pulse" size={14} /> for Qwik delivery.
+              Built with <Heart className="text-red-500 fill-red-500 animate-pulse" size={14} /> for fresh farm delivery.
            </div>
         </div>
       </div>

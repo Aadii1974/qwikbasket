@@ -16,8 +16,8 @@ const SearchPage = () => {
   useSEO({
     title: query ? `"${query}" – Search Results` : 'Search Groceries Online',
     description: query
-      ? `Find ${query} on QwikBasket. Fresh farm produce delivered fast. Competitive prices and Qwik delivery.`
-      : 'Search for fresh groceries, dairy, vegetables and farm produce on QwikBasket.',
+      ? `Find ${query} on Real Farms. Fresh organic farm produce delivered fast. Competitive prices and fast delivery.`
+      : 'Search for fresh organic groceries, dairy, vegetables and farm produce on Real Farms.',
     canonical: '/search',
     noindex: !query,
   });

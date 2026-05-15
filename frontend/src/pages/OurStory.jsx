@@ -28,10 +28,10 @@ const OurStory = () => {
   const navigate = useNavigate();
   
   useSEO({
-    title: 'Our Story – QwikBasket by Real Farms',
-    description: 'Discover how QwikBasket bridges the gap between organic farmers and urban families. Fresh, farm-sourced groceries delivered with purpose, speed, and passion.',
+    title: 'Our Story – Real Farms',
+    description: 'Discover how Real Farms bridges the gap between organic farmers and urban families. Fresh, farm-sourced groceries delivered with purpose, speed, and passion. Zero middlemen, 100% organic.',
     canonical: '/our-story',
-    keywords: ['about QwikBasket', 'Real Farms story', 'farm to door', 'organic grocery India', 'sustainable farming', 'fair trade agriculture'],
+    keywords: ['about Real Farms', 'farm to door India', 'organic grocery India', 'sustainable farming India', 'fair trade agriculture', 'organic food delivery India', 'farm fresh delivery story'],
   });
 
   // Active Philosophy Tab State
@@ -117,7 +117,7 @@ const OurStory = () => {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="text-slate-600 text-lg sm:text-xl font-medium leading-relaxed max-w-2xl"
             >
-              QwikBasket was born from a simple, burning question: Why should organic food be a luxury for the city, while the farmers who nurture it receive pennies? We built a logistics highway connecting direct fields to your basket in minutes.
+              Real Farms was born from a simple, burning question: Why should organic food be a luxury for the city, while the farmers who nurture it receive pennies? We built a logistics highway connecting direct fields to your basket in minutes.
             </motion.p>
 
             <motion.div 
@@ -217,7 +217,7 @@ const OurStory = () => {
                   See the Real Difference Your Groceries Make
                 </h2>
                 <p className="text-emerald-100/80 font-medium text-sm leading-relaxed">
-                  By moving your monthly grocery spend to QwikBasket, you cut out exploitative wholesale intermediaries, guarantee fair compensation to organic farmers, eliminate petroleum plastic wrappers, and bypass heavy-emission transport vehicles.
+                  By moving your monthly grocery spend to Real Farms, you cut out exploitative wholesale intermediaries, guarantee fair compensation to organic farmers, eliminate petroleum plastic wrappers, and bypass heavy-emission transport vehicles.
                 </p>
 
                 {/* Input Slider */}
@@ -513,18 +513,18 @@ const OurStory = () => {
               {/* Year Marker Desktop (Left side) */}
               <div className="hidden md:flex justify-end text-right pr-4 pt-1 flex-col items-end">
                 <span className="text-teal-400 font-black text-3xl font-outfit">Apr 2025</span>
-                <span className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1">QWIKBASKET DEBUT</span>
+                <span className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1">REAL FARMS DEBUT</span>
               </div>
 
               {/* Card Container */}
               <div className="bg-slate-950/60 border border-slate-800 backdrop-blur-md p-7.5 rounded-3xl group-hover:border-teal-500/30 transition duration-300">
                 <div className="flex md:hidden items-center justify-between mb-2">
                   <span className="text-teal-400 font-black text-xl font-outfit">Apr 2025</span>
-                  <span className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">QWIKBASKET DEBUT</span>
+                  <span className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">REAL FARMS DEBUT</span>
                 </div>
-                <h3 className="text-xl font-black font-outfit mb-3">Launching QwikBasket</h3>
+                <h3 className="text-xl font-black font-outfit mb-3">Launching Real Farms</h3>
                 <p className="text-slate-400 font-medium text-sm leading-relaxed">
-                  The initial release of the QwikBasket platform went live! Over 2,000 households joined in the first month. Our routing algorithms automated deliveries so that a fresh basket of morning harvest is sorted and delivered in record time, while keeping delivery emissions low.
+                  The initial release of the Real Farms platform went live! Over 2,000 households joined in the first month. Our routing algorithms automated deliveries so that a fresh basket of morning harvest is sorted and delivered in record time, while keeping delivery emissions low.
                 </p>
                 <div className="flex items-center gap-1.5 bg-teal-400/10 border border-teal-400/20 text-teal-400 text-[10px] font-bold px-3 py-1 rounded-full w-fit mt-4">
                   <Users size={12} />
@@ -552,7 +552,7 @@ const OurStory = () => {
                 </div>
                 <h3 className="text-xl font-black font-outfit mb-3">Expanding Sustainable Sourcing</h3>
                 <p className="text-slate-400 font-medium text-sm leading-relaxed">
-                  QwikBasket now supports 500+ local farming partners. Every week, we deliver chemical-free fruits, pesticide-free vegetables, grains, and daily farm-essentials to 10k+ families. We remain committed to keeping our supply chain eco-friendly and direct.
+                  Real Farms now supports 500+ local farming partners. Every week, we deliver chemical-free fruits, pesticide-free vegetables, grains, and daily farm-essentials to 10k+ families. We remain committed to keeping our supply chain eco-friendly and direct.
                 </p>
                 <div className="flex items-center gap-1.5 bg-rose-400/10 border border-rose-400/20 text-rose-400 text-[10px] font-bold px-3 py-1 rounded-full w-fit mt-4">
                   <Award size={12} />
@@ -717,7 +717,7 @@ const OurStory = () => {
               <div className="bg-white rounded-3xl p-8 border border-slate-200/40 shadow-sm hover:shadow-md transition-shadow duration-300 relative space-y-6 flex flex-col justify-between">
                 <Quote className="text-emerald-100 absolute top-4 right-4" size={48} />
                 <p className="text-slate-600 font-medium text-sm leading-relaxed relative z-10 italic">
-                  "QwikBasket has transformed my farm. I now get fair prices paid directly to me within 24 hours, and I can focus entirely on growing clean, pesticide-free vegetables."
+                  "Real Farms has transformed my farm. I now get fair prices paid directly to me within 24 hours, and I can focus entirely on growing clean, pesticide-free vegetables."
                 </p>
                 <div className="flex items-center gap-4 relative z-10 pt-4 border-t border-slate-50">
                   <div className="w-12 h-12 rounded-full overflow-hidden border border-slate-100">
@@ -738,7 +738,7 @@ const OurStory = () => {
               <div className="bg-white rounded-3xl p-8 border border-slate-200/40 shadow-sm hover:shadow-md transition-shadow duration-300 relative space-y-6 flex flex-col justify-between">
                 <Quote className="text-emerald-100 absolute top-4 right-4" size={48} />
                 <p className="text-slate-600 font-medium text-sm leading-relaxed relative z-10 italic">
-                  "Working with QwikBasket lets me focus on preserving heritage apple orchards. They take care of the logistics and cooling, and ensure our apples reach the city fresh and unblemished."
+                  "Working with Real Farms lets me focus on preserving heritage apple orchards. They take care of the logistics and cooling, and ensure our apples reach the city fresh and unblemished."
                 </p>
                 <div className="flex items-center gap-4 relative z-10 pt-4 border-t border-slate-50">
                   <div className="w-12 h-12 rounded-full overflow-hidden border border-slate-100">
@@ -772,7 +772,7 @@ const OurStory = () => {
                 Our Ecological Pledge to the Planet
               </h2>
               <p className="text-emerald-100/80 font-medium text-base leading-relaxed">
-                Agriculture shouldn't leave scars. At QwikBasket, our green initiatives go beyond simple packaging. We are dedicated to building a zero-waste, carbon-conscious network that supports biodiversity.
+                Agriculture shouldn't leave scars. At Real Farms, our green initiatives go beyond simple packaging. We are dedicated to building a zero-waste, carbon-conscious network that supports biodiversity.
               </p>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">

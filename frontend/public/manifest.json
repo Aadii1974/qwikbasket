@@ -1,6 +1,7 @@
 {
-  "short_name": "QwikBasket",
-  "name": "QwikBasket",
+  "short_name": "Real Farms",
+  "name": "Real Farms – Fresh Organic Grocery Delivery",
+  "description": "Fresh organic groceries delivered from farm to your doorstep. Zero middlemen, best prices, fast delivery.",
   "icons": [
     {
       "src": "icon-192.png",
@@ -16,5 +17,6 @@
   "start_url": "/",
   "display": "standalone",
   "theme_color": "#1FB33B",
-  "background_color": "#ffffff"
+  "background_color": "#ffffff",
+  "categories": ["shopping", "food", "lifestyle"]
 }

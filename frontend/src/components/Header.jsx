@@ -135,10 +135,10 @@ const Header = () => {
           <div className="flex items-center gap-1.5 sm:gap-2 md:gap-6 flex-shrink-0 min-w-0">
             <Link to="/" className="flex items-center gap-1.5 group min-w-0 flex-shrink-0">
               <span className="text-[18px] sm:text-[20px] md:text-[28px] font-[900] tracking-tighter truncate" style={{ color: 'var(--secondary)' }}>
-                Qwik<span className="text-slate-800">Basket</span>
+                Real<span className="text-slate-800">Farms</span>
               </span>
               <span className="bg-amber-100 text-amber-700 text-[8px] px-1.5 py-0.5 rounded-full font-[900] uppercase tracking-wider hidden md:block shadow-sm border border-amber-200">
-                by Real Farms
+                Organic Delivery
               </span>
             </Link>
 

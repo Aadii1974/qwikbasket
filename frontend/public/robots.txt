@@ -16,7 +16,7 @@ Disallow: /login
 Disallow: /api/
 
 # Sitemap
-Sitemap: https://qwikbasket.in/sitemap.xml
+Sitemap: https://realfarms.in/sitemap.xml
 
 # Crawl-delay (be nice to bots)
 Crawl-delay: 1

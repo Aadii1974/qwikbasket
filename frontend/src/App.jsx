@@ -68,7 +68,7 @@ const AppContent = ({ isInitialLoad, setIsInitialLoad }) => {
     // 1. Check if app is already installed or running in standalone mode
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
     if (isStandalone) {
-      console.log('📱 QwikBasket is running as an installed PWA. Hiding install prompts.');
+      console.log('📱 Real Farms is running as an installed PWA. Hiding install prompts.');
       return; // Stop right here, never show the prompt if already installed!
     }
 
@@ -96,7 +96,7 @@ const AppContent = ({ isInitialLoad, setIsInitialLoad }) => {
 
   const handleInstallApp = () => {
     if (isIOS) {
-      alert("📱 To install QwikBasket on your iPhone:\n\n1. Tap the 'Share' button (📤 square with an up-arrow) at the bottom of Safari.\n2. Scroll down and choose 'Add to Home Screen'.\n\nEnjoy fresh groceries at your fingertips!");
+      alert("📱 To install Real Farms on your iPhone:\n\n1. Tap the 'Share' button (📤 square with an up-arrow) at the bottom of Safari.\n2. Scroll down and choose 'Add to Home Screen'.\n\nEnjoy fresh organic groceries at your fingertips!");
     } else if (deferredPrompt) {
       deferredPrompt.prompt();
       deferredPrompt.userChoice.then((choiceResult) => {
@@ -167,11 +167,11 @@ const AppContent = ({ isInitialLoad, setIsInitialLoad }) => {
               <div className="flex justify-between items-start relative z-10">
                 <div className="flex gap-4 items-center">
                   <div className="w-16 h-16 rounded-2xl overflow-hidden shadow-md border-2 border-emerald-500/10 flex-shrink-0 bg-white">
-                    <img src="/icon-192.png" alt="QwikBasket Icon" className="w-full h-full object-cover animate-pulse" />
+                    <img src="/icon-192.png" alt="Real Farms Icon" className="w-full h-full object-cover animate-pulse" />
                   </div>
                   <div>
                     <span className="text-[10px] bg-emerald-100 text-emerald-800 font-extrabold px-2.5 py-1 rounded-full uppercase tracking-wider">OFFICIAL PWA</span>
-                    <h4 className="font-black text-lg text-slate-900 mt-1 leading-tight">QwikBasket</h4>
+                    <h4 className="font-black text-lg text-slate-900 mt-1 leading-tight">Real Farms</h4>
                   </div>
                 </div>
                 <button 
@@ -185,7 +185,7 @@ const AppContent = ({ isInitialLoad, setIsInitialLoad }) => {
               <div className="space-y-2 relative z-10">
                 <p className="text-xs text-slate-600 font-medium leading-relaxed">
                   {isIOS 
-                    ? "Install QwikBasket directly to your iPhone's home screen for lightning-fast shopping and native-app speeds!"
+                    ? "Install Real Farms directly to your iPhone's home screen for lightning-fast shopping and native-app speeds!"
                     : "Install our lightweight app directly to your home screen for lightning-fast shopping, native gestures, and exclusive mobile-only deals!"
                   }
                 </p>

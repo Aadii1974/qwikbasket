@@ -7,28 +7,28 @@
   <!-- ── High Priority Pages ────────────────────────── -->
   <url>
     <loc>https://realfarms.in/</loc>
-    <lastmod>2026-05-15</lastmod>
+    <lastmod>2026-05-16</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
 
   <url>
     <loc>https://realfarms.in/search</loc>
-    <lastmod>2026-05-15</lastmod>
+    <lastmod>2026-05-16</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
 
   <url>
     <loc>https://realfarms.in/categories</loc>
-    <lastmod>2026-05-15</lastmod>
+    <lastmod>2026-05-16</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <url>
     <loc>https://realfarms.in/bulk-basket</loc>
-    <lastmod>2026-05-15</lastmod>
+    <lastmod>2026-05-16</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -36,14 +36,14 @@
   <!-- ── Brand Pages ─────────────────────────────────── -->
   <url>
     <loc>https://realfarms.in/our-story</loc>
-    <lastmod>2026-05-15</lastmod>
+    <lastmod>2026-05-16</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
 
   <url>
     <loc>https://realfarms.in/login</loc>
-    <lastmod>2026-05-15</lastmod>
+    <lastmod>2026-05-16</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.4</priority>
   </url>

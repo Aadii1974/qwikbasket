@@ -74,7 +74,7 @@ const useSEO = ({
     canonicalEl.setAttribute('href', canonicalUrl);
 
     // ── Keywords ───────────────────────────────────────────
-    const baseKeywords = 'Real Farms, online grocery delivery India, fresh organic vegetables, dairy delivery, farm fresh groceries, farm to doorstep, organic food delivery, buy vegetables online, fresh fruits delivery, same day grocery delivery, zero middleman grocery, organic produce India, grocery app India, fresh grocery delivery';
+    const baseKeywords = 'Real Farms, real farms, realfarms, online grocery delivery India, fresh organic vegetables, dairy delivery, farm fresh groceries, farm to doorstep, organic food delivery, buy vegetables online, fresh fruits delivery, same day grocery delivery, zero middleman grocery, organic produce India, grocery app India, fresh grocery delivery';
     const allKeywords = keywords.length > 0 ? `${keywords.join(', ')}, ${baseKeywords}` : baseKeywords;
     setMeta('meta[name="keywords"]', 'content', allKeywords);
 

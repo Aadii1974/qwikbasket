@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import Header from './components/Header';
@@ -25,7 +25,10 @@ import { Smartphone, X } from 'lucide-react';
 import { fetchSettings } from './services/api';
 
 function App() {
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  // Only show splash loader when landing directly on the homepage.
+  // This prevents Googlebot from seeing a 3-second blank screen on /search, /product/:id, etc.
+  const isHomepageEntry = window.location.pathname === '/';
+  const [isInitialLoad, setIsInitialLoad] = useState(isHomepageEntry);
 
   return (
     <AuthProvider>

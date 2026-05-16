@@ -15,6 +15,7 @@ const deliveryRoutes = require('./routes/deliveryRoutes');
 const couponRoutes   = require('./routes/couponRoutes');
 const uploadRoutes   = require('./routes/uploadRoutes');
 const valuePackRoutes = require('./routes/valuePackRoutes');
+const sitemapRoutes   = require('./routes/sitemapRoutes');
 
 
 const app = express();
@@ -37,6 +38,7 @@ app.use('/api/delivery',   deliveryRoutes);
 app.use('/api/coupons',    couponRoutes);
 app.use('/api/upload',     uploadRoutes);
 app.use('/api/value-packs', valuePackRoutes);
+app.use('/api',            sitemapRoutes);   // serves GET /api/sitemap.xml
 
 // Health Check
 app.get('/', (req, res) => res.json({ status: 'ok', message: '🚀 Real Farms API is running' }));

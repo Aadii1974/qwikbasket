@@ -4,12 +4,19 @@
         xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
         http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
 
-  <!-- ── High Priority Pages ────────────────────────── -->
+  <!-- ── Tier 1: Core Discovery Pages (Highest Priority) ─────────── -->
   <url>
     <loc>https://realfarms.in/</loc>
     <lastmod>2026-05-16</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
+  </url>
+
+  <url>
+    <loc>https://realfarms.in/categories</loc>
+    <lastmod>2026-05-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
   </url>
 
   <url>
@@ -19,13 +26,7 @@
     <priority>0.9</priority>
   </url>
 
-  <url>
-    <loc>https://realfarms.in/categories</loc>
-    <lastmod>2026-05-16</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-
+  <!-- ── Tier 2: Shopping Intent Pages ───────────────────────────── -->
   <url>
     <loc>https://realfarms.in/bulk-basket</loc>
     <lastmod>2026-05-16</lastmod>
@@ -33,7 +34,14 @@
     <priority>0.8</priority>
   </url>
 
-  <!-- ── Brand Pages ─────────────────────────────────── -->
+  <url>
+    <loc>https://realfarms.in/store</loc>
+    <lastmod>2026-05-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- ── Tier 3: Brand & Trust Pages ─────────────────────────────── -->
   <url>
     <loc>https://realfarms.in/our-story</loc>
     <lastmod>2026-05-16</lastmod>
@@ -41,11 +49,12 @@
     <priority>0.7</priority>
   </url>
 
-  <url>
-    <loc>https://realfarms.in/login</loc>
-    <lastmod>2026-05-16</lastmod>
-    <changefreq>yearly</changefreq>
-    <priority>0.4</priority>
-  </url>
+  <!--
+    NOTE: Individual /product/:id and /category/:slug pages are NOT listed
+    here because they are dynamically generated from the database.
+    These are served via a separate backend-generated sitemap endpoint.
+    To enable it, add this to robots.txt:
+      Sitemap: https://realfarms.in/api/sitemap.xml
+  -->
 
 </urlset>

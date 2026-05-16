@@ -6,6 +6,7 @@ Allow: /bulk-basket
 Allow: /product/
 Allow: /category/
 Allow: /categories
+Allow: /store/
 
 Disallow: /admin
 Disallow: /admin/*
@@ -15,7 +16,10 @@ Disallow: /profile
 Disallow: /login
 Disallow: /api/
 
-# Sitemap
+# Dynamic sitemap (includes all products, categories & stores from database)
+Sitemap: https://realfarms.in/api/sitemap.xml
+
+# Static sitemap (core pages)
 Sitemap: https://realfarms.in/sitemap.xml
 
 # Crawl-delay (be nice to bots)

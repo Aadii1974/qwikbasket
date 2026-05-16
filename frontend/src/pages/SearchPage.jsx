@@ -18,8 +18,11 @@ const SearchPage = () => {
     description: query
       ? `Find ${query} on Real Farms. Fresh organic farm produce delivered fast. Competitive prices and fast delivery.`
       : 'Search for fresh organic groceries, dairy, vegetables and farm produce on Real Farms.',
+    // Always keep the canonical /search page indexable.
+    // Query-specific URLs (/search?q=...) are dynamic so we point them
+    // back to the same canonical to avoid duplicate-content penalties.
     canonical: '/search',
-    noindex: !query,
+    noindex: false,
   });
 
   useEffect(() => {

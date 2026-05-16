@@ -39,7 +39,7 @@ app.use('/api/upload',     uploadRoutes);
 app.use('/api/value-packs', valuePackRoutes);
 
 // Health Check
-app.get('/', (req, res) => res.json({ status: 'ok', message: '🚀 QwikBasket API is running' }));
+app.get('/', (req, res) => res.json({ status: 'ok', message: '🚀 Real Farms API is running' }));
 
 // 404 handler
 app.use((req, res) => res.status(404).json({ success: false, error: 'Route not found' }));
@@ -69,7 +69,7 @@ const startServer = async () => {
     }
 
     app.listen(PORT, () => {
-      console.log(`✅ QwikBasket API running at http://localhost:${PORT}`);
+      console.log(`✅ Real Farms API running at http://localhost:${PORT}`);
     });
   } catch (err) {
     console.error('❌ Server startup failed:', err.message);

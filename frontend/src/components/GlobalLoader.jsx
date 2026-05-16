@@ -13,7 +13,7 @@ const GlobalLoader = ({ onFinish }) => {
 
     const timeout = setTimeout(() => {
       onFinish();
-    }, 6000); 
+    }, 3000); 
 
     return () => {
       clearInterval(itemInterval);
@@ -63,11 +63,11 @@ const GlobalLoader = ({ onFinish }) => {
 
           <h1 className="text-5xl md:text-7xl font-black tracking-tighter text-center flex flex-col items-center leading-none">
             <span className="text-slate-900 drop-shadow-sm flex items-center gap-1">
-               Qwik<span className="text-emerald-600">Basket</span>
+               Real<span className="text-emerald-600">Farms</span>
             </span>
             <div className="mt-4 flex items-center gap-4">
                <div className="h-0.5 w-10 bg-emerald-500/20 rounded-full" />
-               <span className="text-xs md:text-sm text-emerald-800 font-black tracking-[0.4em] uppercase">Village Fresh</span>
+               <span className="text-xs md:text-sm text-emerald-800 font-black tracking-[0.4em] uppercase">Farm to Doorstep</span>
                <div className="h-0.5 w-10 bg-emerald-500/20 rounded-full" />
             </div>
           </h1>
@@ -88,7 +88,7 @@ const GlobalLoader = ({ onFinish }) => {
             <motion.div 
               initial={{ width: '0%' }}
               animate={{ width: '100%' }}
-              transition={{ duration: 5.5, ease: [0.65, 0, 0.35, 1] }}
+              transition={{ duration: 2.5, ease: [0.65, 0, 0.35, 1] }}
               className="h-full bg-emerald-500 shadow-[0_0_15px_rgba(34,197,94,0.3)] relative overflow-hidden"
             >
                <motion.div animate={{ x: ['-100%', '100%'] }} transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }} className="absolute inset-0 bg-white/40 skew-x-[-20deg]" />

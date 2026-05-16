@@ -4,8 +4,9 @@ const { getStores, createStore, updateStore, deleteStore } = require('../control
 
 const { authMiddleware, adminMiddleware } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
+const { cache } = require('../middleware/cacheMiddleware');
 
-router.get('/', getStores);
+router.get('/', cache(300), getStores);
 router.post('/', authMiddleware, adminMiddleware, upload.single('image'), createStore);
 router.put('/:id', authMiddleware, adminMiddleware, upload.single('image'), updateStore);
 router.delete('/:id', authMiddleware, adminMiddleware, deleteStore);

@@ -41,9 +41,9 @@ const OurStory = () => {
   const [monthlySpend, setMonthlySpend] = useState(5000);
 
   // Impact Calculations
-  const qwikBasketFarmerShare = Math.round(monthlySpend * 0.75);
+  const realFarmsFarmerShare = Math.round(monthlySpend * 0.75);
   const standardRetailFarmerShare = Math.round(monthlySpend * 0.28);
-  const extraFarmerEarnings = qwikBasketFarmerShare - standardRetailFarmerShare;
+  const extraFarmerEarnings = realFarmsFarmerShare - standardRetailFarmerShare;
   const plasticBagsSaved = Math.round(monthlySpend * 0.015);
   const co2ReducedKg = (monthlySpend * 0.012).toFixed(1);
 
@@ -258,7 +258,7 @@ const OurStory = () => {
                     </div>
                     <div>
                       <h4 className="text-emerald-200 text-[11px] font-black uppercase tracking-wider">Direct Sourcing Share</h4>
-                      <p className="text-3xl font-black text-white mt-1">₹{qwikBasketFarmerShare.toLocaleString('en-IN')}</p>
+                      <p className="text-3xl font-black text-white mt-1">₹{realFarmsFarmerShare.toLocaleString('en-IN')}</p>
                       <p className="text-emerald-100/60 text-[11px] font-medium mt-1">
                         Goes directly to farmers. Standard retail yields only <span className="text-amber-300 font-bold">₹{standardRetailFarmerShare.toLocaleString('en-IN')}</span> for the same basket.
                       </p>

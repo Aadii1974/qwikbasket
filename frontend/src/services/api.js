@@ -1,5 +1,24 @@
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
+// ── Lightweight client-side request cache (TTL: 60 s) ──────────────────────
+// Prevents redundant fetches when navigating between pages in the same session.
+const _cache = new Map(); // url → { data, expires }
+const CACHE_TTL = 60 * 1000; // 60 seconds
+
+const cachedFetch = async (url, options) => {
+  // Only cache plain GET requests with no auth header
+  const isPublicGet = !options?.method || options.method === 'GET';
+  if (isPublicGet && !options?.headers?.Authorization) {
+    const hit = _cache.get(url);
+    if (hit && hit.expires > Date.now()) return hit.data.clone();
+    const res = await fetch(url, options);
+    if (res.ok) {
+      _cache.set(url, { data: res.clone(), expires: Date.now() + CACHE_TTL });
+    }
+    return res;
+  }
+  return fetch(url, options);
+};
 
 // Helper for auth headers — must be before any functions that use it
 const getAuthHeaders = (contentType = 'application/json') => {
@@ -131,7 +150,7 @@ export const deleteCoupon = async (id) => {
 // PRODUCTS
 export const fetchProducts = async (isAdmin = false) => {
   try {
-    const res = await fetch(`${API_URL}/products${isAdmin ? '?isAdmin=true' : ''}`);
+    const res = await cachedFetch(`${API_URL}/products${isAdmin ? '?isAdmin=true' : ''}`);
     const data = await res.json();
     return data.data || [];
   } catch (e) { return []; }
@@ -139,7 +158,7 @@ export const fetchProducts = async (isAdmin = false) => {
 
 export const fetchProductById = async (id) => {
   try {
-    const res = await fetch(`${API_URL}/products/${id}`);
+    const res = await cachedFetch(`${API_URL}/products/${id}`);
     const data = await res.json();
     return data.data || null;
   } catch (e) { return null; }
@@ -147,7 +166,7 @@ export const fetchProductById = async (id) => {
 
 export const fetchBulkProducts = async () => {
   try {
-    const res = await fetch(`${API_URL}/products/bulk`);
+    const res = await cachedFetch(`${API_URL}/products/bulk`);
     const data = await res.json();
     return data.data || [];
   } catch (e) { return []; }
@@ -232,7 +251,7 @@ export const deleteProduct = async (id) => {
 // STORES
 export const fetchStores = async () => {
   try {
-    const res = await fetch(`${API_URL}/stores`);
+    const res = await cachedFetch(`${API_URL}/stores`);
     const data = await res.json();
     return data.data || [];
   } catch (e) { return []; }
@@ -269,7 +288,7 @@ export const deleteStore = async (id) => {
 // CATEGORIES
 export const fetchCategories = async () => {
   try {
-    const res = await fetch(`${API_URL}/categories`);
+    const res = await cachedFetch(`${API_URL}/categories`);
     const data = await res.json();
     return data.data || [];
   } catch (e) { return []; }
@@ -444,7 +463,7 @@ export const fetchAdminStats = async () => {
 // SETTINGS
 export const fetchSettings = async () => {
   try {
-    const res = await fetch(`${API_URL}/settings`, { headers: getAuthHeaders() });
+    const res = await cachedFetch(`${API_URL}/settings`);
     const data = await res.json();
     return data.data || null;
   } catch (e) { return null; }
@@ -550,7 +569,7 @@ export const fetchAgentMetrics = async () => {
 // HOME SECTIONS
 export const fetchHomeSections = async () => {
     try {
-        const res = await fetch(`${API_URL}/products/home-sections`);
+        const res = await cachedFetch(`${API_URL}/products/home-sections`);
         const data = await res.json();
         return data.data || { latest: [], trending: [], mostPurchased: [] };
     } catch (e) { return { latest: [], trending: [], mostPurchased: [] }; }

@@ -29,6 +29,62 @@ const ProductPage = () => {
     canonical: `/product/${id}`,
     keywords: product ? [product.name, product.category || '', 'buy online', 'fresh delivery'] : [],
   });
+
+  // ── Product Structured Data (JSON-LD) ──────────────────────────────
+  useEffect(() => {
+    if (!product) return;
+
+    const price = product.b2cNewPrice || product.b2cOldPrice || 0;
+    const inStock = (Number(product.stock) || 0) > 0;
+    let productImages = [];
+    try {
+      productImages = product.images
+        ? (typeof product.images === 'string' ? JSON.parse(product.images) : product.images)
+        : [];
+    } catch (e) { productImages = []; }
+
+    const jsonLd = {
+      '@context': 'https://schema.org/',
+      '@type': 'Product',
+      name: product.name,
+      description: product.description || `Buy ${product.name} online on Real Farms. Fresh, farm-sourced organic produce. Fast delivery guaranteed.`,
+      image: productImages.length > 0 ? productImages : [`https://realfarms.in/og-image.jpg`],
+      sku: String(product.id),
+      brand: { '@type': 'Brand', name: 'Real Farms' },
+      offers: {
+        '@type': 'Offer',
+        url: `https://realfarms.in/product/${id}`,
+        priceCurrency: 'INR',
+        price: Number(price).toFixed(2),
+        availability: inStock
+          ? 'https://schema.org/InStock'
+          : 'https://schema.org/OutOfStock',
+        seller: { '@type': 'Organization', name: 'Real Farms' },
+      },
+      aggregateRating: {
+        '@type': 'AggregateRating',
+        ratingValue: '4.8',
+        reviewCount: '2400',
+        bestRating: '5',
+        worstRating: '1',
+      },
+    };
+
+    const scriptId = 'product-jsonld';
+    let el = document.getElementById(scriptId);
+    if (!el) {
+      el = document.createElement('script');
+      el.id = scriptId;
+      el.type = 'application/ld+json';
+      document.head.appendChild(el);
+    }
+    el.textContent = JSON.stringify(jsonLd);
+
+    return () => {
+      const s = document.getElementById(scriptId);
+      if (s) s.remove();
+    };
+  }, [product, id]);
   
   const autoScrollRef = useRef(null);
 

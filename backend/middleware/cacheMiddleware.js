@@ -19,9 +19,8 @@ const cache = (ttlSeconds = 30) => (req, res, next) => {
   const hit = store.get(key);
 
   if (hit && hit.expires > Date.now()) {
-    // Set cache-control so CDNs / browsers also benefit
     res.setHeader('X-Cache', 'HIT');
-    res.setHeader('Cache-Control', `public, max-age=${ttlSeconds}, stale-while-revalidate=30`);
+    res.setHeader('Cache-Control', 'no-store, max-age=0');
     return res.json(hit.body);
   }
 
@@ -32,7 +31,7 @@ const cache = (ttlSeconds = 30) => (req, res, next) => {
       store.set(key, { body, expires: Date.now() + ttlSeconds * 1000 });
     }
     res.setHeader('X-Cache', 'MISS');
-    res.setHeader('Cache-Control', `public, max-age=${ttlSeconds}, stale-while-revalidate=30`);
+    res.setHeader('Cache-Control', 'no-store, max-age=0');
     return originalJson(body);
   };
 

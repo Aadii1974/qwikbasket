@@ -21,7 +21,8 @@
     "multer-storage-cloudinary": "^4.0.0",
     "mysql2": "^3.20.0",
     "razorpay": "^2.9.6",
-    "sequelize": "^6.37.8"
+    "sequelize": "^6.37.8",
+    "web-push": "^3.6.7"
   },
   "description": "",
   "devDependencies": {

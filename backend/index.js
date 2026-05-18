@@ -16,7 +16,7 @@ const couponRoutes   = require('./routes/couponRoutes');
 const uploadRoutes   = require('./routes/uploadRoutes');
 const valuePackRoutes = require('./routes/valuePackRoutes');
 const sitemapRoutes   = require('./routes/sitemapRoutes');
-
+const pushRoutes      = require('./routes/pushRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -38,6 +38,7 @@ app.use('/api/delivery',   deliveryRoutes);
 app.use('/api/coupons',    couponRoutes);
 app.use('/api/upload',     uploadRoutes);
 app.use('/api/value-packs', valuePackRoutes);
+app.use('/api/notifications', pushRoutes);
 app.use('/api',            sitemapRoutes);   // serves GET /api/sitemap.xml
 
 // Health Check

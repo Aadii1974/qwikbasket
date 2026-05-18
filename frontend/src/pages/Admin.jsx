@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Package, Store as StoreIcon, Zap, Edit, Trash, Plus, Check, LayoutGrid, MapPin, ShoppingBag, ChevronDown, Truck, Clock, BarChart3, TrendingUp, DollarSign, Activity, Tag as TagIcon, Image as ImageIcon, Calendar, Rocket, ToggleLeft, ToggleRight, Upload, Gift, Disc, Award, Star, Settings as SettingsIcon, MousePointerClick, Sparkles } from 'lucide-react';
+import { Users, Package, Store as StoreIcon, Zap, Edit, Trash, Plus, Check, LayoutGrid, MapPin, ShoppingBag, ChevronDown, Truck, Clock, BarChart3, TrendingUp, DollarSign, Activity, Tag as TagIcon, Image as ImageIcon, Calendar, Rocket, ToggleLeft, ToggleRight, Upload, Gift, Disc, Award, Star, Settings as SettingsIcon, MousePointerClick, Sparkles, Bell } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { 
   fetchProducts, createProduct, updateProduct, deleteProduct,
@@ -11,7 +11,8 @@ import {
   fetchDeliveryAgents, createDeliveryAgent, deleteDeliveryAgent, assignOrderToAgent, fetchSettlementData, processSettlement,
   fetchAllCoupons, createCoupon, updateCoupon, deleteCoupon,
   uploadImage,
-  fetchValuePacks, createValuePack, updateValuePack, deleteValuePack
+  fetchValuePacks, createValuePack, updateValuePack, deleteValuePack,
+  sendPushNotification
 } from '../services/api';
 
 
@@ -533,6 +534,7 @@ const Admin = () => {
                 { id: 'serviceability', label: 'Serviceability', icon: <MapPin size={20}/> },
                 { id: 'flash', label: 'Flash Sale', icon: <Zap size={20}/> },
                 { id: 'settings', label: 'Global Settings', icon: <Edit size={20}/> },
+                { id: 'notifications', label: 'Push Notifications', icon: <Bell size={20}/> },
                 { id: 'coupons', label: 'Coupons Manager', icon: <TagIcon size={20}/> },
                 { id: 'value_packs', label: 'Value Packs', icon: <Gift size={20}/> },
                 { id: 'media', label: 'Media Manager', icon: <ImageIcon size={20}/> },
@@ -2077,6 +2079,76 @@ const Admin = () => {
                              </div>
                            ))}
                         </div>
+                     </div>
+                  )}
+
+                  {/* PUSH NOTIFICATIONS MANAGER */}
+                  {activeTab === 'notifications' && (
+                     <div className="animate-fade-in max-w-2xl">
+                        <div className="mb-8">
+                          <h2 className="text-2xl font-black mb-2 text-slate-900">Broadcast Push Notification</h2>
+                          <p className="text-gray-500 font-medium">Send a real-time push notification to all users who have installed the app.</p>
+                        </div>
+                        
+                        <form onSubmit={async (e) => {
+                          e.preventDefault();
+                          const formData = new FormData(e.target);
+                          const payload = {
+                            title: formData.get('title'),
+                            body: formData.get('body'),
+                            url: formData.get('url'),
+                            image: formData.get('image') || null
+                          };
+                          
+                          const btn = document.getElementById('send-push-btn');
+                          const originalText = btn.innerHTML;
+                          btn.innerHTML = 'Sending...';
+                          btn.disabled = true;
+                          
+                          try {
+                            const res = await sendPushNotification(payload);
+                            if (res.success) {
+                              alert(`✅ Notification sent successfully!`);
+                              e.target.reset();
+                            } else {
+                              alert('❌ Failed to send: ' + (res.error || 'Unknown error'));
+                            }
+                          } catch (err) {
+                            alert('❌ Error: ' + err.message);
+                          } finally {
+                            btn.innerHTML = originalText;
+                            btn.disabled = false;
+                          }
+                        }} className="bg-white border-2 border-slate-100 rounded-3xl p-6 shadow-sm space-y-5">
+                          
+                          <div>
+                            <label className="block text-sm font-black text-slate-700 mb-2 uppercase tracking-wide">Notification Title <span className="text-red-500">*</span></label>
+                            <input name="title" required maxLength="50" className="w-full px-4 py-3 border-2 border-slate-100 rounded-xl focus:border-[var(--secondary)] outline-none font-bold text-slate-800" placeholder="e.g. Flash Sale is Live! ⚡" />
+                            <p className="text-[10px] text-slate-400 font-bold mt-1">Keep it short and catchy (max 50 chars)</p>
+                          </div>
+                          
+                          <div>
+                            <label className="block text-sm font-black text-slate-700 mb-2 uppercase tracking-wide">Message Body <span className="text-red-500">*</span></label>
+                            <textarea name="body" required rows="3" maxLength="150" className="w-full px-4 py-3 border-2 border-slate-100 rounded-xl focus:border-[var(--secondary)] outline-none font-bold text-slate-800 resize-none" placeholder="e.g. Get 50% off on all fresh vegetables for the next 2 hours!"></textarea>
+                            <p className="text-[10px] text-slate-400 font-bold mt-1">The main content of the notification (max 150 chars)</p>
+                          </div>
+                          
+                          <div>
+                            <label className="block text-sm font-black text-slate-700 mb-2 uppercase tracking-wide">Target URL</label>
+                            <input name="url" defaultValue="/" className="w-full px-4 py-3 border-2 border-slate-100 rounded-xl focus:border-[var(--secondary)] outline-none font-bold text-slate-800" placeholder="e.g. /category/vegetables or /" />
+                            <p className="text-[10px] text-slate-400 font-bold mt-1">Where should the app navigate when the user taps the notification?</p>
+                          </div>
+                          
+                          <div>
+                            <label className="block text-sm font-black text-slate-700 mb-2 uppercase tracking-wide">Large Image URL (Optional)</label>
+                            <input name="image" className="w-full px-4 py-3 border-2 border-slate-100 rounded-xl focus:border-[var(--secondary)] outline-none font-bold text-slate-800" placeholder="https://..." />
+                            <p className="text-[10px] text-slate-400 font-bold mt-1">A large hero image to show in the notification (works best on Android)</p>
+                          </div>
+                          
+                          <button id="send-push-btn" type="submit" className="w-full bg-[var(--secondary)] text-white py-4 rounded-xl font-black shadow-lg hover:opacity-90 transition flex justify-center items-center gap-2">
+                            <Bell size={20} /> Broadcast to All Users
+                          </button>
+                        </form>
                      </div>
                   )}
 

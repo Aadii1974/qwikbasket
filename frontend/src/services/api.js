@@ -3,7 +3,7 @@ const API_URL = import.meta.env.VITE_API_URL || '/api';
 // ── Lightweight client-side request cache (TTL: 60 s) ──────────────────────
 // Prevents redundant fetches when navigating between pages in the same session.
 const _cache = new Map(); // url → { data, expires }
-const CACHE_TTL = 60 * 1000; // 60 seconds
+const CACHE_TTL = 0; // Disable frontend cache to prevent late updates
 
 const cachedFetch = async (url, options) => {
   // Only cache plain GET requests with no auth header
@@ -633,4 +633,36 @@ export const uploadImage = async (file) => {
   const data = await res.json();
   if (!res.ok || !data.success) throw new Error(data.error || 'Upload failed');
   return data.urls?.[0] || data.url;
+};
+
+// ── Web Push Notifications ─────────────────────────────
+
+export const fetchVapidPublicKey = async () => {
+  try {
+    const res = await fetch(`${API_URL}/notifications/vapidPublicKey`);
+    const data = await res.json();
+    return data.publicKey;
+  } catch (e) { return null; }
+};
+
+export const subscribeToPush = async (subscription) => {
+  try {
+    const res = await fetch(`${API_URL}/notifications/subscribe`, {
+      method: 'POST',
+      headers: getAuthHeaders('application/json'),
+      body: JSON.stringify(subscription)
+    });
+    return await res.json();
+  } catch (e) { return { success: false }; }
+};
+
+export const sendPushNotification = async (payload) => {
+  try {
+    const res = await fetch(`${API_URL}/notifications/send`, {
+      method: 'POST',
+      headers: getAuthHeaders('application/json'),
+      body: JSON.stringify(payload)
+    });
+    return await res.json();
+  } catch (e) { return { success: false, error: e.message }; }
 };

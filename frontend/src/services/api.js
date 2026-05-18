@@ -122,6 +122,7 @@ export const validateCoupon = async (code) => {
 };
 
 export const createCoupon = async (couponData) => {
+  _cache.clear();
   const res = await fetch(`${API_URL}/coupons`, {
     method: 'POST',
     headers: getAuthHeaders(),
@@ -131,6 +132,7 @@ export const createCoupon = async (couponData) => {
 };
 
 export const updateCoupon = async (id, couponData) => {
+  _cache.clear();
   const res = await fetch(`${API_URL}/coupons/${id}`, {
     method: 'PUT',
     headers: getAuthHeaders(),
@@ -140,6 +142,7 @@ export const updateCoupon = async (id, couponData) => {
 };
 
 export const deleteCoupon = async (id) => {
+  _cache.clear();
   const res = await fetch(`${API_URL}/coupons/${id}`, {
     method: 'DELETE',
     headers: getAuthHeaders(),
@@ -195,6 +198,7 @@ export const fetchValuePacks = async () => {
 };
 
 export const createValuePack = async (packData) => {
+  _cache.clear();
   const res = await fetch(`${API_URL}/value-packs`, {
     method: 'POST',
     headers: getAuthHeaders('application/json'),
@@ -204,6 +208,7 @@ export const createValuePack = async (packData) => {
 };
 
 export const updateValuePack = async (id, packData) => {
+  _cache.clear();
   const res = await fetch(`${API_URL}/value-packs/${id}`, {
     method: 'PUT',
     headers: getAuthHeaders('application/json'),
@@ -213,6 +218,7 @@ export const updateValuePack = async (id, packData) => {
 };
 
 export const deleteValuePack = async (id) => {
+  _cache.clear();
   const res = await fetch(`${API_URL}/value-packs/${id}`, {
     method: 'DELETE',
     headers: getAuthHeaders(),
@@ -221,6 +227,7 @@ export const deleteValuePack = async (id) => {
 };
 
 export const createProduct = async (productData) => {
+  _cache.clear();
   const isFormData = productData instanceof FormData;
   const res = await fetch(`${API_URL}/products`, {
     method: 'POST',
@@ -231,6 +238,7 @@ export const createProduct = async (productData) => {
 };
 
 export const updateProduct = async (id, productData) => {
+  _cache.clear();
   const isFormData = productData instanceof FormData;
   const res = await fetch(`${API_URL}/products/${id}`, {
     method: 'PUT',
@@ -241,6 +249,7 @@ export const updateProduct = async (id, productData) => {
 };
 
 export const deleteProduct = async (id) => {
+  _cache.clear();
   const res = await fetch(`${API_URL}/products/${id}`, {
     method: 'DELETE',
     headers: getAuthHeaders(),
@@ -258,6 +267,7 @@ export const fetchStores = async () => {
 };
 
 export const createStore = async (storeData) => {
+  _cache.clear();
   const isFormData = storeData instanceof FormData;
   const res = await fetch(`${API_URL}/stores`, {
     method: 'POST',
@@ -268,6 +278,7 @@ export const createStore = async (storeData) => {
 };
 
 export const updateStore = async (id, storeData) => {
+  _cache.clear();
   const isFormData = storeData instanceof FormData;
   const res = await fetch(`${API_URL}/stores/${id}`, {
     method: 'PUT',
@@ -278,6 +289,7 @@ export const updateStore = async (id, storeData) => {
 };
 
 export const deleteStore = async (id) => {
+  _cache.clear();
   const res = await fetch(`${API_URL}/stores/${id}`, {
     method: 'DELETE',
     headers: getAuthHeaders(),
@@ -295,6 +307,7 @@ export const fetchCategories = async () => {
 };
 
 export const createCategory = async (categoryData) => {
+  _cache.clear();
   const isFormData = categoryData instanceof FormData;
   const res = await fetch(`${API_URL}/categories`, {
     method: 'POST',
@@ -305,6 +318,7 @@ export const createCategory = async (categoryData) => {
 };
 
 export const updateCategory = async (id, categoryData) => {
+  _cache.clear();
   const isFormData = categoryData instanceof FormData;
   const res = await fetch(`${API_URL}/categories/${id}`, {
     method: 'PUT',
@@ -315,6 +329,7 @@ export const updateCategory = async (id, categoryData) => {
 };
 
 export const createSubCategory = async (categoryId, subData) => {
+  _cache.clear();
   const res = await fetch(`${API_URL}/categories/${categoryId}/subcategories`, {
     method: 'POST',
     headers: getAuthHeaders(),
@@ -324,6 +339,7 @@ export const createSubCategory = async (categoryId, subData) => {
 };
 
 export const deleteCategory = async (id) => {
+  _cache.clear();
   const res = await fetch(`${API_URL}/categories/${id}`, {
     method: 'DELETE',
     headers: getAuthHeaders(),
@@ -470,6 +486,7 @@ export const fetchSettings = async () => {
 };
 
 export const updateSettings = async (settingsData) => {
+  _cache.clear();
   const res = await fetch(`${API_URL}/settings`, {
     method: 'PUT',
     headers: getAuthHeaders(),

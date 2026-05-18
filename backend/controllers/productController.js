@@ -1,6 +1,7 @@
 const Product = require('../models/Product');
 const { sequelize } = require('../config/db');
 const { Op } = require('sequelize');
+const { bustCache } = require('../middleware/cacheMiddleware');
 
 const getProducts = async (req, res) => {
   try {
@@ -87,6 +88,7 @@ const createProduct = async (req, res) => {
     }
 
     const product = await Product.create(data);
+    bustCache('/api');
     res.status(201).json({ success: true, data: product });
   } catch (err) {
     console.error("Create Product Error:", err);
@@ -123,6 +125,7 @@ const updateProduct = async (req, res) => {
     await Product.update(data, { where: { id } });
     const updatedProduct = await Product.findByPk(id);
     if (updatedProduct) {
+      bustCache('/api');
       return res.status(200).json({ success: true, data: updatedProduct });
     }
     return res.status(404).json({ success: false, error: 'Product not found' });
@@ -138,6 +141,7 @@ const deleteProduct = async (req, res) => {
     const { id } = req.params;
     const deleted = await Product.destroy({ where: { id } });
     if (deleted) {
+      bustCache('/api');
       return res.status(200).json({ success: true, message: 'Product deleted successfully' });
     }
     throw new Error('Product not found');

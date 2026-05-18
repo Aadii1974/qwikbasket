@@ -1,4 +1,5 @@
 const { Category, SubCategory } = require('../models');
+const { bustCache } = require('../middleware/cacheMiddleware');
 
 const getCategories = async (req, res) => {
   try {
@@ -27,6 +28,7 @@ const createCategory = async (req, res) => {
       image: imageUrl, 
       isVegetable: isVegetable === 'true' || isVegetable === true 
     });
+    bustCache('/api');
     res.status(201).json({ success: true, data: category });
   } catch (error) {
     res.status(400).json({ success: false, error: error.message });
@@ -52,6 +54,7 @@ const createSubCategory = async (req, res) => {
     if (!category) return res.status(404).json({ success: false, error: 'Category not found' });
     
     const subcategory = await SubCategory.create({ name, slug, categoryId: categoryId });
+    bustCache('/api');
     res.status(201).json({ success: true, data: subcategory });
   } catch (error) {
     res.status(400).json({ success: false, error: error.message });
@@ -75,6 +78,7 @@ const updateCategory = async (req, res) => {
     const [updated] = await Category.update(data, { where: { id } });
     if (updated) {
       const updatedCategory = await Category.findByPk(id);
+      bustCache('/api');
       return res.status(200).json({ success: true, data: updatedCategory });
     }
     throw new Error('Category not found');
@@ -89,6 +93,7 @@ const deleteCategory = async (req, res) => {
     const { id } = req.params;
     const deleted = await Category.destroy({ where: { id } });
     if (deleted) {
+      bustCache('/api');
       return res.status(200).json({ success: true, message: 'Category deleted successfully' });
     }
     throw new Error('Category not found');

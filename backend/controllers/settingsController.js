@@ -1,4 +1,5 @@
 const { Settings } = require('../models');
+const { bustCache } = require('../middleware/cacheMiddleware');
 
 const getSettings = async (req, res) => {
   try {
@@ -67,6 +68,7 @@ const updateSettings = async (req, res) => {
     });
 
     await settings.update(update);
+    bustCache('/api');
     res.status(200).json({ success: true, data: settings });
   } catch (err) {
     res.status(400).json({ success: false, error: err.message });

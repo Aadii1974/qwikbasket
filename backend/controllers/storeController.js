@@ -1,4 +1,5 @@
 const { Store } = require('../models');
+const { bustCache } = require('../middleware/cacheMiddleware');
 
 const getStores = async (req, res) => {
   try {
@@ -23,6 +24,7 @@ const createStore = async (req, res) => {
       data.visibleSections = JSON.stringify(['trending', 'latest', 'mostPurchased']);
     }
     const store = await Store.create(data);
+    bustCache('/api');
     res.status(201).json({ success: true, data: store });
   } catch (err) {
     res.status(400).json({ success: false, error: err.message });
@@ -43,6 +45,7 @@ const updateStore = async (req, res) => {
     const [updated] = await Store.update(data, { where: { id } });
     if (updated) {
       const updatedStore = await Store.findByPk(id);
+      bustCache('/api');
       return res.status(200).json({ success: true, data: updatedStore });
     }
     throw new Error('Store not found');
@@ -56,6 +59,7 @@ const deleteStore = async (req, res) => {
     const { id } = req.params;
     const deleted = await Store.destroy({ where: { id } });
     if (deleted) {
+      bustCache('/api');
       return res.status(200).json({ success: true, message: 'Store deleted successfully' });
     }
     throw new Error('Store not found');

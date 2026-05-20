@@ -892,7 +892,198 @@ const Home = () => {
       {/* ── Delivery / Trust Section (below stores) ────────── */}
       <DeliverySection deliveryImage={deliveryImage} />
 
+      {/* ── PWA Install CTA Section (add option to install later) ── */}
+      <PWAInstallCTA />
+
     </div>
+  );
+};
+
+// ── PWA Install CTA Component ──────────────────────────────────────────────────
+const PWAInstallCTA = () => {
+  const [isStandalone, setIsStandalone] = useState(false);
+
+  useEffect(() => {
+    const isStandaloneMode = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+    setIsStandalone(!!isStandaloneMode);
+  }, []);
+
+  const handleInstallClick = () => {
+    window.dispatchEvent(new CustomEvent('trigger-pwa-install'));
+  };
+
+  if (isStandalone) return null;
+
+  return (
+    <section className="max-w-[1440px] mx-auto px-4 lg:px-10 mb-10 md:mb-16">
+      <div className="relative overflow-hidden rounded-[32px] md:rounded-[48px] bg-gradient-to-br from-emerald-950 via-[#0B2512] to-slate-950 p-8 md:p-12 lg:p-16 shadow-[0_24px_60px_rgba(4,79,29,0.25)] border border-emerald-900/30">
+        
+        {/* Background Glowing Effects */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute -top-24 -left-24 w-96 h-96 bg-emerald-500/10 rounded-full blur-[100px]" />
+          <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-green-500/15 rounded-full blur-[120px]" />
+        </div>
+
+        <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-8 items-center">
+          {/* Left - Content */}
+          <div className="lg:col-span-7 space-y-6 text-left">
+            <span className="inline-flex items-center gap-2 bg-emerald-500/10 text-emerald-400 text-[10px] font-black px-4 py-2 rounded-full uppercase tracking-[0.25em] border border-emerald-500/25">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              Real Farms App
+            </span>
+            
+            <h2 className="text-3xl md:text-5xl font-[900] text-white heading-tight leading-[1.1] tracking-tight">
+              Get our Mobile App for <br className="hidden sm:block" />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-yellow-300">
+                Lightning Fast
+              </span> Shopping
+            </h2>
+            
+            <p className="text-slate-300 font-medium text-sm md:text-base leading-relaxed max-w-lg">
+              Install Real Farms directly to your home screen. Enjoy pure native-app speeds, offline cart browsing, instant delivery updates, and exclusive app-only discounts!
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-400 flex-shrink-0">
+                  ⚡
+                </div>
+                <div>
+                  <h4 className="font-extrabold text-white text-sm">Instant Checkout</h4>
+                  <p className="text-slate-400 text-xs mt-0.5">Order in less than 10 seconds</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-400 flex-shrink-0">
+                  🔔
+                </div>
+                <div>
+                  <h4 className="font-extrabold text-white text-sm">Direct Flash Deals</h4>
+                  <p className="text-slate-400 text-xs mt-0.5">Push notifications for hot price cuts</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-400 flex-shrink-0">
+                  📱
+                </div>
+                <div>
+                  <h4 className="font-extrabold text-white text-sm">Zero Storage Burden</h4>
+                  <p className="text-slate-400 text-xs mt-0.5">Under 1MB installation footprint</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-400 flex-shrink-0">
+                  🥬
+                </div>
+                <div>
+                  <h4 className="font-extrabold text-white text-sm">Farm-to-Door Tracker</h4>
+                  <p className="text-slate-400 text-xs mt-0.5">Track your order in real-time</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-4 pt-4">
+              <button 
+                onClick={handleInstallClick}
+                className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-sm px-8 py-4 rounded-2xl shadow-xl shadow-emerald-500/20 active:scale-[0.98] transition-all duration-200"
+              >
+                Install App Now
+              </button>
+              <div className="flex items-center gap-2 text-slate-400 text-[11px] font-bold px-2">
+                🔒 Safe, light, and secure. No Play Store or App Store registration required.
+              </div>
+            </div>
+          </div>
+
+          {/* Right - Premium Responsive Phone Mockup */}
+          <div className="lg:col-span-5 flex justify-center lg:justify-end items-center relative">
+            {/* Glowing background halo */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 bg-emerald-500/20 rounded-full blur-[80px] pointer-events-none" />
+            
+            <motion.div 
+              initial={{ y: 15, rotate: 1.5 }}
+              animate={{ y: -15, rotate: -1.5 }}
+              transition={{ repeat: Infinity, repeatType: "reverse", duration: 5, ease: "easeInOut" }}
+              className="relative w-[270px] h-[500px] bg-slate-900 border-[8px] border-slate-800 rounded-[44px] shadow-[0_30px_70px_rgba(0,0,0,0.8)] overflow-hidden flex-shrink-0"
+            >
+              {/* Screen Notch */}
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-28 h-5 bg-slate-800 rounded-b-xl z-50 flex items-center justify-center">
+                <div className="w-10 h-1 bg-black rounded-full mb-0.5" />
+              </div>
+              
+              {/* Internal Screen App UI */}
+              <div className="w-full h-full bg-slate-950 flex flex-col p-4 pt-7 text-left text-white select-none">
+                {/* Simulated Header */}
+                <div className="flex justify-between items-center mb-3 mt-1">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-7 h-7 rounded-lg overflow-hidden border border-slate-800 bg-white p-0.5">
+                      <img src="/icon-192.png" alt="Icon" className="w-full h-full object-cover" />
+                    </div>
+                    <div>
+                      <h5 className="text-[9px] font-black leading-none">Real Farms</h5>
+                      <span className="text-[5px] text-emerald-400 font-bold uppercase tracking-widest mt-0.5 inline-block">App Active</span>
+                    </div>
+                  </div>
+                  <span className="text-[8px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-full font-black border border-emerald-500/20">
+                    🟢 ONLINE
+                  </span>
+                </div>
+
+                {/* Simulated Hero Banner */}
+                <div className="bg-gradient-to-r from-emerald-900 to-green-800 rounded-xl p-2.5 mb-3 border border-emerald-700/20">
+                  <span className="text-[5px] font-black bg-yellow-400 text-slate-950 px-1.5 py-0.5 rounded-md uppercase tracking-wider">APP SPECIAL</span>
+                  <h4 className="text-[10px] font-black mt-1 leading-tight">40% OFF ON ALL ORGANIC BUNDLES</h4>
+                  <p className="text-[6px] text-slate-300 font-semibold mt-0.5">Code: REALAPP40</p>
+                </div>
+
+                {/* Simulated Products Section */}
+                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Featured Produce</p>
+                <div className="grid grid-cols-2 gap-2 flex-grow overflow-hidden">
+                  <div className="bg-slate-900/80 rounded-xl p-2 border border-slate-800 flex flex-col justify-between">
+                    <div className="aspect-[4/3] rounded-lg overflow-hidden bg-slate-950 flex items-center justify-center text-lg">
+                      🥦
+                    </div>
+                    <div className="mt-1">
+                      <h6 className="text-[8px] font-extrabold truncate">Fresh Broccoli</h6>
+                      <p className="text-[6px] text-slate-500 font-bold">1 Unit (500g)</p>
+                      <div className="flex justify-between items-center mt-1">
+                        <span className="text-[9px] font-black text-emerald-400">₹79</span>
+                        <button className="bg-emerald-500 text-slate-950 w-3.5 h-3.5 rounded-md flex items-center justify-center text-[8px] font-black">+</button>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-slate-900/80 rounded-xl p-2 border border-slate-800 flex flex-col justify-between">
+                    <div className="aspect-[4/3] rounded-lg overflow-hidden bg-slate-950 flex items-center justify-center text-lg">
+                      🍅
+                    </div>
+                    <div className="mt-1">
+                      <h6 className="text-[8px] font-extrabold truncate">Farm Tomatoes</h6>
+                      <p className="text-[6px] text-slate-500 font-bold">1 Pack (1kg)</p>
+                      <div className="flex justify-between items-center mt-1">
+                        <span className="text-[9px] font-black text-emerald-400">₹45</span>
+                        <button className="bg-emerald-500 text-slate-950 w-3.5 h-3.5 rounded-md flex items-center justify-center text-[8px] font-black">+</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Simulated Checkout Area */}
+                <div className="bg-slate-900 border-t border-slate-800 p-2 -mx-4 -mb-4 mt-2.5 flex justify-between items-center rounded-b-[38px]">
+                  <div>
+                    <p className="text-[5px] font-bold text-slate-400 uppercase leading-none">Your Cart</p>
+                    <p className="text-[10px] font-black text-white mt-0.5">2 Items • ₹124</p>
+                  </div>
+                  <button className="bg-[#044f1d] hover:bg-green-800 text-white font-extrabold text-[8px] px-3.5 py-1.5 rounded-lg border border-emerald-500/20 shadow-md">
+                    Checkout ➔
+                  </button>
+                </div>
+
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </div>
+    </section>
   );
 };
 

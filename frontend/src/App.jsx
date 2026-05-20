@@ -81,6 +81,7 @@ const AppContent = ({ isInitialLoad, setIsInitialLoad }) => {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [showInstallPopup, setShowInstallPopup] = useState(false);
   const [showIOSGuide, setShowIOSGuide] = useState(false);
+  const [showManualGuide, setShowManualGuide] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
 
   useEffect(() => {
@@ -153,7 +154,8 @@ const AppContent = ({ isInitialLoad, setIsInitialLoad }) => {
         setShowInstallPopup(false);
       });
     } else {
-      alert("App can only be installed in supported browsers or has already been installed.");
+      setShowInstallPopup(false);
+      setShowManualGuide(true);
     }
   };
 
@@ -319,6 +321,72 @@ const AppContent = ({ isInitialLoad, setIsInitialLoad }) => {
 
                 <button 
                   onClick={() => setShowIOSGuide(false)}
+                  className="w-full mt-8 bg-[#044f1d] text-white font-bold py-4 rounded-xl shadow-lg shadow-green-900/20 active:scale-[0.98] transition"
+                >
+                  Got it!
+                </button>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* General Install Guide Overlay */}
+        <AnimatePresence>
+          {showManualGuide && (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[70] flex items-end justify-center bg-black/60 backdrop-blur-sm sm:items-center p-4"
+              onClick={() => setShowManualGuide(false)}
+            >
+              <motion.div 
+                initial={{ y: "100%" }}
+                animate={{ y: 0 }}
+                exit={{ y: "100%" }}
+                transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                onClick={(e) => e.stopPropagation()}
+                className="w-full max-w-md bg-white rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl relative"
+              >
+                <button 
+                  onClick={() => setShowManualGuide(false)}
+                  className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center bg-slate-100 text-slate-500 rounded-full"
+                >
+                  <X size={18} />
+                </button>
+                
+                <div className="text-center mb-6 mt-2">
+                  <div className="w-16 h-16 mx-auto bg-green-100 text-green-700 rounded-2xl flex items-center justify-center mb-4 shadow-sm">
+                    <Smartphone size={32} />
+                  </div>
+                  <h3 className="text-xl font-black text-slate-900">Install Real Farms App</h3>
+                  <p className="text-slate-600 text-sm mt-2 font-medium">Get the full experience on your device with these simple steps:</p>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex items-start gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                    <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm text-[#044f1d] flex-shrink-0 font-extrabold text-sm border border-slate-200">
+                      1
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-slate-800">Mobile (Android/Chrome)</p>
+                      <p className="text-xs text-slate-500 mt-0.5 leading-relaxed font-semibold">Tap the <strong>three vertical dots</strong> in the upper right corner of Chrome and select <strong>'Install app'</strong> or <strong>'Add to Home screen'</strong>.</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                    <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm text-[#044f1d] flex-shrink-0 font-extrabold text-sm border border-slate-200">
+                      2
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-slate-800">Desktop (Chrome/Edge)</p>
+                      <p className="text-xs text-slate-500 mt-0.5 leading-relaxed font-semibold">Click the <strong>Install Icon</strong> (monitor with down arrow) in the address bar next to the star icon, or open the browser menu and select <strong>'Install Real Farms...'</strong>.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <button 
+                  onClick={() => setShowManualGuide(false)}
                   className="w-full mt-8 bg-[#044f1d] text-white font-bold py-4 rounded-xl shadow-lg shadow-green-900/20 active:scale-[0.98] transition"
                 >
                   Got it!

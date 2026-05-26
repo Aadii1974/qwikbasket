@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Package, Store as StoreIcon, Zap, Edit, Trash, Plus, Check, LayoutGrid, MapPin, ShoppingBag, ChevronDown, Truck, Clock, BarChart3, TrendingUp, DollarSign, Activity, Tag as TagIcon, Image as ImageIcon, Calendar, Rocket, ToggleLeft, ToggleRight, Upload, Gift, Disc, Award, Star, Settings as SettingsIcon, MousePointerClick, Sparkles, Bell } from 'lucide-react';
+import { Users, Package, Store as StoreIcon, Zap, Edit, Trash, Plus, Check, LayoutGrid, MapPin, ShoppingBag, ChevronDown, Truck, Clock, BarChart3, TrendingUp, DollarSign, Activity, Tag as TagIcon, Image as ImageIcon, Calendar, Rocket, ToggleLeft, ToggleRight, Upload, Gift, Disc, Award, Star, Settings as SettingsIcon, MousePointerClick, Sparkles, Bell, Search } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { 
   fetchProducts, createProduct, updateProduct, deleteProduct,

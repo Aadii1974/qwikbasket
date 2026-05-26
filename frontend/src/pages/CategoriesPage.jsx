@@ -3,6 +3,7 @@ import { fetchCategories } from '../services/api';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
+import { useLoading } from '../context/LoadingContext';
 import { ChevronLeft } from 'lucide-react';
 import useSEO from '../hooks/useSEO';
 
@@ -23,6 +24,7 @@ const itemVariants = {
 
 const CategoriesPage = () => {
   const { user } = useAuth();
+  const { startLoading, stopLoading } = useLoading();
   const isB2B = user?.role === 'b2b';
   const navigate = useNavigate();
   
@@ -39,6 +41,7 @@ const CategoriesPage = () => {
   useEffect(() => {
     const loadCategories = async () => {
       setIsLoading(true);
+      startLoading();
       try {
         const cs = await fetchCategories();
         setCategories(cs || []);
@@ -46,6 +49,7 @@ const CategoriesPage = () => {
         console.error("Categories loading error:", err);
       } finally {
         setIsLoading(false);
+        stopLoading();
       }
     };
     loadCategories();
@@ -69,11 +73,7 @@ const CategoriesPage = () => {
         </div>
 
         {/* Categories Grid — Box Style */}
-        {isLoading ? (
-          <div className="flex justify-center py-20">
-            <div className="w-10 h-10 border-4 border-slate-200 border-t-[var(--secondary)] rounded-full animate-spin"></div>
-          </div>
-        ) : (
+        {isLoading ? null : (
           <motion.div 
             variants={containerVariants} 
             initial="hidden" 

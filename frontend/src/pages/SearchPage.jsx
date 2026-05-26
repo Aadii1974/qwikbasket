@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { fetchProducts } from '../services/api';
+import { useLoading } from '../context/LoadingContext';
 import ProductCard from '../components/ProductCard';
 import { Search } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -9,6 +10,7 @@ import useSEO from '../hooks/useSEO';
 const SearchPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const query = searchParams.get('q') || '';
+  const { startLoading, stopLoading } = useLoading();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchInput, setSearchInput] = useState(query);
@@ -28,6 +30,7 @@ const SearchPage = () => {
   useEffect(() => {
     const loadProducts = async () => {
       setLoading(true);
+      startLoading();
       try {
         const allProds = await fetchProducts();
         if (query.trim() === '') {
@@ -46,6 +49,7 @@ const SearchPage = () => {
         console.error(err);
       } finally {
         setLoading(false);
+        stopLoading();
       }
     };
     loadProducts();
@@ -81,11 +85,7 @@ const SearchPage = () => {
           {query ? `Search results for "${query}"` : 'Search for products'}
         </h2>
 
-        {loading ? (
-          <div className="flex justify-center items-center h-40">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--secondary)]"></div>
-          </div>
-        ) : (
+        {loading ? null : (
           <>
             {query && products.length === 0 ? (
               <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-gray-200">

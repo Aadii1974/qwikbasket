@@ -5,6 +5,7 @@ import ProductCard from '../components/ProductCard';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Lock, Unlock, Package, TrendingUp, Star, Zap } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useLoading } from '../context/LoadingContext';
 import useSEO from '../hooks/useSEO';
 
 const THEMES = {
@@ -48,6 +49,7 @@ const StorePage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { startLoading, stopLoading } = useLoading();
   const [isStoreOpen, setIsStoreOpen] = useState(false);
   const [isUnlocked, setIsUnlocked] = useState(false);
   // Real data state
@@ -78,6 +80,7 @@ const StorePage = () => {
 
   useEffect(() => {
     const loadContent = async () => {
+      startLoading();
       try {
         const [psRaw, ss, sections] = await Promise.all([fetchProducts(), fetchStores(), fetchHomeSections()]);
         const currentStore = ss.find(s => s.id === id);
@@ -111,6 +114,7 @@ const StorePage = () => {
         console.error("Store loading error:", err);
       } finally {
         setIsLoading(false);
+        stopLoading();
       }
     };
     loadContent();
@@ -118,7 +122,7 @@ const StorePage = () => {
     // 1. Trigger the physical unlock mechanism
     const unlockTimer = setTimeout(() => {
        setIsUnlocked(true);
-    }, 1200);
+     }, 1200);
 
     // 2. Open the physical shutter violently upwards
     const openTimer = setTimeout(() => {
@@ -129,7 +133,7 @@ const StorePage = () => {
     return () => { clearTimeout(unlockTimer); clearTimeout(openTimer); }
   }, [id]);
 
-  if (isLoading) return <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white font-black uppercase tracking-widest animate-pulse">Initializing Store...</div>;
+  if (isLoading) return null;
   if (!storeDetails) return <div className="min-h-screen bg-slate-100 flex flex-col items-center justify-center text-slate-800 p-8 text-center"><h2 className="text-3xl font-black mb-4">Store Not Found</h2><button onClick={() => navigate('/')} className="bg-slate-900 text-white px-8 py-3 rounded-xl font-bold">Back to Home</button></div>;
 
   const visibleSections = getVisibleSections(storeDetails);

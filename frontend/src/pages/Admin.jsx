@@ -59,6 +59,10 @@ const Admin = () => {
   const [b2bTiers, setB2bTiers] = useState([]);
   const [productVariants, setProductVariants] = useState([]);
 
+  // Collapsible categories state in Product Manager
+  const [expandedCategories, setExpandedCategories] = useState({});
+  const [adminProductSearch, setAdminProductSearch] = useState('');
+
   const [pincodes, setPincodes] = useState([]);
   const [newPincode, setNewPincode] = useState('');
 
@@ -637,101 +641,378 @@ const Admin = () => {
                   )}
 
                   {/* PRODUCTS MANAGER */}
-                  {activeTab === 'products' && (
-                    <div className="animate-fade-in">
-                       <div className="flex justify-between items-end mb-8">
-                         <div>
-                           <h2 className="text-2xl font-black mb-2 text-slate-900">Product Manager</h2>
-                           <p className="text-gray-500 font-medium">Manage visibility (Normal/B2B), pricing, and assign to specific stores.</p>
-                         </div>
-                         <button onClick={() => { 
-                           setEditingProduct(null); 
-                           setSelectedCategoryId('');
-                           setCustomerType('BOTH');
-                           setB2bTiers([]); // Clear tiers for new product
-                            setProductVariants([]); // Clear variants for new product
-                           setImageFiles([]);
-                           setImagePreviews([]);
-                           setIsProductModalOpen(true); 
-                         }} className="bg-[var(--secondary)] text-white px-6 py-3 rounded-xl font-black text-sm shadow-lg flex items-center gap-2 hover:opacity-90 transition"><Plus size={18} /> Add Product</button>
-                       </div>
+                  {activeTab === 'products' && (() => {
+                    const groupedProducts = (() => {
+                      const groups = {};
+                      categories.forEach(cat => {
+                        groups[cat.id] = { category: cat, products: [] };
+                      });
+                      const uncategorized = [];
+                      products.forEach(p => {
+                        if (p.categoryId && groups[p.categoryId]) {
+                          groups[p.categoryId].products.push(p);
+                        } else {
+                          uncategorized.push(p);
+                        }
+                      });
+                      return { groups, uncategorized };
+                    })();
 
-                       <div className="overflow-x-auto bg-white border border-gray-100 rounded-2xl shadow-sm">
-                          <table className="w-full text-left border-collapse">
-                             <thead>
-                                <tr className="bg-slate-50 text-xs uppercase tracking-widest text-slate-500 font-black border-b border-gray-100">
-                                   <th className="p-5">Product</th>
-                                   <th className="p-5">Type</th>
-                                   <th className="p-5">Stock</th>
-                                   <th className="p-5">Price (B2C/B2B)</th>
-                                   <th className="p-5 text-right">Actions</th>
-                                </tr>
-                             </thead>
-                             <tbody className="divide-y divide-gray-50">
-                                {products.map(p => {
-                                   const stock = Number(p.stock) || 0;
-                                   const isOut = stock <= 0;
-                                   const isLow = stock > 0 && stock <= 10;
-                                   let imgSrc = 'https://placehold.co/100';
-                                   try { if (p.images) imgSrc = JSON.parse(p.images)[0] || imgSrc; } catch {}
-                                   return (
-                                  <tr key={p.id} className="hover:bg-slate-50/50 transition">
-                                     <td className="p-5 flex items-center gap-4">
-                                        <img src={imgSrc} alt={p.name} className="w-12 h-12 rounded-xl object-cover border border-gray-100 shadow-sm" />
+                    const { groups, uncategorized } = groupedProducts;
+                    const isSearchActive = adminProductSearch.trim() !== '';
+
+                    const getFilteredProducts = (prods) => {
+                      if (!isSearchActive) return prods;
+                      const lowerQ = adminProductSearch.toLowerCase();
+                      return prods.filter(p => 
+                        (p.name && p.name.toLowerCase().includes(lowerQ)) || 
+                        (p.description && p.description.toLowerCase().includes(lowerQ)) ||
+                        (p.unit && p.unit.toLowerCase().includes(lowerQ))
+                      );
+                    };
+
+                    const toggleCategory = (catId) => {
+                      setExpandedCategories(prev => ({
+                        ...prev,
+                        [catId]: !(prev[catId] ?? true)
+                      }));
+                    };
+
+                    const filteredUncategorized = getFilteredProducts(uncategorized);
+                    const showUncategorized = !isSearchActive || filteredUncategorized.length > 0;
+
+                    return (
+                      <div className="animate-fade-in">
+                         {/* Header and Add Global Button */}
+                         <div className="flex flex-col sm:flex-row justify-between sm:items-end gap-4 mb-8">
+                           <div>
+                             <h2 className="text-2xl font-black mb-2 text-slate-900">Product Manager</h2>
+                             <p className="text-gray-500 font-medium">Manage visibility (Normal/B2B), pricing, and edit details segregated by category.</p>
+                           </div>
+                           <button onClick={() => { 
+                             setEditingProduct(null); 
+                             setSelectedCategoryId('');
+                             setCustomerType('BOTH');
+                             setB2bTiers([]); // Clear tiers for new product
+                             setProductVariants([]); // Clear variants for new product
+                             setImageFiles([]);
+                             setImagePreviews([]);
+                             setIsProductModalOpen(true); 
+                           }} className="bg-[var(--secondary)] text-white px-6 py-3 rounded-xl font-black text-sm shadow-lg flex items-center justify-center gap-2 hover:opacity-90 transition max-w-[200px]"><Plus size={18} /> Add Product</button>
+                         </div>
+
+                         {/* Search & Accordion Controls */}
+                         <div className="flex flex-col sm:flex-row gap-4 mb-8 items-center justify-between bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                            <div className="relative w-full sm:w-96">
+                               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                               <input 
+                                 type="text" 
+                                 placeholder="Search product name, description or unit..."
+                                 value={adminProductSearch}
+                                 onChange={(e) => setAdminProductSearch(e.target.value)}
+                                 className="w-full bg-white pl-12 pr-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-[var(--secondary)] transition text-sm font-semibold text-slate-800"
+                               />
+                            </div>
+                            <div className="flex gap-2 w-full sm:w-auto justify-end">
+                               <button 
+                                 onClick={() => {
+                                   const expanded = {};
+                                   categories.forEach(c => expanded[c.id] = true);
+                                   expanded['uncategorized'] = true;
+                                   setExpandedCategories(expanded);
+                                 }}
+                                 className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-black text-slate-700 hover:bg-slate-100 transition shadow-sm"
+                               >
+                                  Expand All
+                               </button>
+                               <button 
+                                 onClick={() => {
+                                   setExpandedCategories({});
+                                 }}
+                                 className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-black text-slate-700 hover:bg-slate-100 transition shadow-sm"
+                               >
+                                  Collapse All
+                               </button>
+                            </div>
+                         </div>
+
+                         {/* Categories Sections Accordion */}
+                         <div className="space-y-6">
+                           {categories.map(cat => {
+                             const catProducts = groups[cat.id]?.products || [];
+                             const filteredProds = getFilteredProducts(catProducts);
+                             const isExpanded = expandedCategories[cat.id] ?? true;
+                             const showExpanded = isSearchActive ? (filteredProds.length > 0) : isExpanded;
+
+                             // In search mode, only render category if it has matching products
+                             if (isSearchActive && filteredProds.length === 0) return null;
+
+                             return (
+                               <div key={cat.id} className="bg-white border border-slate-100 rounded-3xl shadow-sm overflow-hidden border">
+                                  {/* Category Header Card */}
+                                  <div 
+                                    onClick={() => toggleCategory(cat.id)}
+                                    className="p-5 bg-slate-50/70 hover:bg-slate-100/50 cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-4 select-none transition border-b border-slate-100"
+                                  >
+                                     <div className="flex items-center gap-4">
+                                        <div className="w-12 h-12 rounded-2xl overflow-hidden bg-white shadow-sm border border-slate-100 flex-shrink-0 flex items-center justify-center p-1.5">
+                                           <img src={cat.image || 'https://placehold.co/100'} className="w-full h-full object-cover rounded-xl" alt="" />
+                                        </div>
                                         <div>
-                                           <div className="flex items-center gap-2">
-                                              <p className="font-black text-slate-900">{p.name}</p>
-                                              {p.isBulkOnly && <span className="bg-amber-100 text-amber-700 text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-tighter">Bulk Only</span>}
+                                           <h3 className="font-black text-slate-800 text-lg leading-tight">{cat.name}</h3>
+                                           <p className="text-xs text-slate-400 font-extrabold uppercase tracking-wider mt-0.5">{filteredProds.length} {filteredProds.length === 1 ? 'Product' : 'Products'}</p>
+                                        </div>
+                                     </div>
+                                     
+                                     <div className="flex items-center gap-3 justify-between sm:justify-end">
+                                        <button 
+                                          onClick={(e) => {
+                                            e.stopPropagation(); // Prevent toggling accordion
+                                            setEditingProduct(null);
+                                            setSelectedCategoryId(cat.id);
+                                            setCustomerType('BOTH');
+                                            setB2bTiers([]);
+                                            setProductVariants([]);
+                                            setImageFiles([]);
+                                            setImagePreviews([]);
+                                            setIsProductModalOpen(true);
+                                          }}
+                                          className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-100/50 px-4 py-2 rounded-xl font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition"
+                                        >
+                                           <Plus size={14} strokeWidth={3} /> Add to this Category
+                                        </button>
+                                        <div className={`p-2 bg-white rounded-xl shadow-sm border border-slate-100 text-slate-400 transition-transform duration-300 ${showExpanded ? 'rotate-180' : ''}`}>
+                                           <ChevronDown size={18} strokeWidth={2.5} />
+                                        </div>
+                                     </div>
+                                  </div>
+                                  
+                                  {/* Category Expanded Content */}
+                                  {showExpanded && (
+                                     <div className="p-2 sm:p-5 overflow-x-auto">
+                                        {filteredProds.length > 0 ? (
+                                           <table className="w-full text-left border-collapse">
+                                              <thead>
+                                                 <tr className="bg-slate-50/50 text-[10px] sm:text-xs uppercase tracking-widest text-slate-400 font-black border-b border-slate-100">
+                                                    <th className="p-4 sm:p-5">Product</th>
+                                                    <th className="p-4 sm:p-5">Type</th>
+                                                    <th className="p-4 sm:p-5">Stock</th>
+                                                    <th className="p-4 sm:p-5">Price (B2C/B2B)</th>
+                                                    <th className="p-4 sm:p-5 text-right">Actions</th>
+                                                 </tr>
+                                              </thead>
+                                              <tbody className="divide-y divide-slate-50">
+                                                 {filteredProds.map(p => {
+                                                    const stock = Number(p.stock) || 0;
+                                                    const isOut = stock <= 0;
+                                                    const isLow = stock > 0 && stock <= 10;
+                                                    let imgSrc = 'https://placehold.co/100';
+                                                    try { if (p.images) imgSrc = JSON.parse(p.images)[0] || imgSrc; } catch {}
+                                                    return (
+                                                       <tr key={p.id} className="hover:bg-slate-50/30 transition text-sm">
+                                                          <td className="p-4 sm:p-5 flex items-center gap-3 sm:gap-4">
+                                                             <img src={imgSrc} alt={p.name} className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl object-cover border border-slate-100 shadow-sm" />
+                                                             <div>
+                                                                <div className="flex items-center gap-2 flex-wrap">
+                                                                   <p className="font-black text-slate-800">{p.name}</p>
+                                                                   {p.isBulkOnly && <span className="bg-amber-100 text-amber-700 text-[8px] sm:text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-tighter">Bulk Only</span>}
+                                                                </div>
+                                                                <p className="text-[10px] sm:text-xs text-slate-400 font-bold">{p.unit} {p.packagingSize ? `\u00b7 ${p.packagingSize}` : ''}</p>
+                                                             </div>
+                                                          </td>
+                                                          <td className="p-4 sm:p-5">
+                                                             <span className={`px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-[10px] sm:text-xs font-black ${p.customerType === 'BOTH' ? 'bg-indigo-50 text-indigo-700 border border-indigo-100/30' : p.customerType === 'BUSINESS' ? 'bg-orange-50 text-orange-700 border border-orange-100/30' : 'bg-emerald-50 text-emerald-700 border border-emerald-100/30'}`}>{p.customerType}</span>
+                                                          </td>
+                                                          <td className="p-4 sm:p-5">
+                                                             <div className="flex items-center gap-2">
+                                                                <span className={`text-[11px] sm:text-xs font-black px-2 py-0.5 sm:px-3 sm:py-1 rounded-full ${isOut ? 'bg-red-50 text-red-700 border border-red-100/20' : isLow ? 'bg-amber-50 text-amber-700 border border-amber-100/20' : 'bg-emerald-50 text-emerald-700 border border-emerald-100/20'}`}>{isOut ? '❌ Out' : isLow ? `⚠️ ${stock}` : `✅ ${stock}`}</span>
+                                                                <button 
+                                                                  onClick={async () => { 
+                                                                     const ns = prompt(`Update stock for "${p.name}":`, stock); 
+                                                                     if (ns === null) return; 
+                                                                     const n = parseInt(ns, 10); 
+                                                                     if (isNaN(n) || n < 0) { alert('Invalid stock input'); return; } 
+                                                                     const fd = new FormData(); 
+                                                                     fd.append('stock', n); 
+                                                                     const res = await updateProduct(p.id, fd); 
+                                                                     if (res.success) loadInitialData(); 
+                                                                     else alert('Error updating stock: ' + res.error); 
+                                                                  }} 
+                                                                  className="text-[10px] font-black text-blue-500 hover:underline"
+                                                                >
+                                                                   Edit
+                                                                </button>
+                                                             </div>
+                                                          </td>
+                                                          <td className="p-4 sm:p-5">
+                                                             <div className="flex flex-col gap-0.5">
+                                                                {(p.customerType === 'BOTH' || p.customerType === 'NORMAL') && (
+                                                                   <span className="font-black text-slate-800 text-xs sm:text-sm">C: ₹{p.b2cNewPrice ? Number(p.b2cNewPrice).toFixed(2) : '-'} <span className="text-[10px] text-slate-400 line-through font-bold">₹{p.b2cOldPrice ? Number(p.b2cOldPrice).toFixed(2) : '-'}</span></span>
+                                                                )}
+                                                                {(p.customerType === 'BOTH' || p.customerType === 'BUSINESS') && (
+                                                                   <span className="font-black text-[var(--secondary)] text-xs sm:text-sm">B: ₹{p.b2bNewPrice ? Number(p.b2bNewPrice).toFixed(2) : '-'} <span className="text-[10px] text-slate-400 line-through font-bold">₹{p.b2bOldPrice ? Number(p.b2bOldPrice).toFixed(2) : '-'}</span></span>
+                                                                )}
+                                                             </div>
+                                                          </td>
+                                                          <td className="p-4 sm:p-5 text-right whitespace-nowrap">
+                                                             <button 
+                                                               onClick={() => { 
+                                                                  setEditingProduct(p); 
+                                                                  setSelectedCategoryId(p.categoryId || '');
+                                                                  setCustomerType(p.customerType || 'BOTH');
+                                                                  setImageFiles([]);
+                                                                  setImagePreviews([]);
+                                                                  try { setB2bTiers(p.b2bTiers ? JSON.parse(p.b2bTiers) : []); } catch (e) { setB2bTiers([]); }
+                                                                  try { setProductVariants(p.variants ? (typeof p.variants === 'string' ? JSON.parse(p.variants) : p.variants) : []); } catch (e) { setProductVariants([]); }
+                                                                  setIsProductModalOpen(true); 
+                                                               }} 
+                                                               className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-xl transition mr-2 inline-block"
+                                                             >
+                                                                <Edit size={16} />
+                                                             </button>
+                                                             <button onClick={() => handleDeleteProduct(p.id)} className="p-1.5 text-red-500 hover:bg-red-50 rounded-xl transition inline-block"><Trash size={16} /></button>
+                                                          </td>
+                                                       </tr>
+                                                    );
+                                                 })}
+                                              </tbody>
+                                           </table>
+                                        ) : (
+                                           <div className="py-8 text-center bg-slate-50/50 rounded-2xl border border-dashed border-slate-100">
+                                              <p className="text-slate-400 font-bold text-xs uppercase tracking-widest">No products in this category</p>
                                            </div>
-                                           <p className="text-xs text-gray-500 font-bold">{p.unit} · {p.packagingSize || ''}</p>
+                                        )}
+                                     </div>
+                                  )}
+                               </div>
+                             );
+                           })}
+
+                           {/* Uncategorized Products Accordion */}
+                           {showUncategorized && uncategorized.length > 0 && (() => {
+                             const isExpanded = expandedCategories['uncategorized'] ?? true;
+                             const showExpanded = isSearchActive ? (filteredUncategorized.length > 0) : isExpanded;
+
+                             return (
+                               <div className="bg-white border border-slate-100 rounded-3xl shadow-sm overflow-hidden border">
+                                  <div 
+                                    onClick={() => toggleCategory('uncategorized')}
+                                    className="p-5 bg-slate-50/70 hover:bg-slate-100/50 cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-4 select-none transition border-b border-slate-100"
+                                  >
+                                     <div className="flex items-center gap-4">
+                                        <div className="w-12 h-12 rounded-2xl overflow-hidden bg-white shadow-sm border border-slate-100 flex-shrink-0 flex items-center justify-center p-1.5 text-slate-400">
+                                           <Package size={24} />
                                         </div>
-                                     </td>
-                                     <td className="p-5">
-                                        <span className={`px-3 py-1 rounded-full text-xs font-black ${p.customerType === 'BOTH' ? 'bg-indigo-100 text-indigo-700' : p.customerType === 'BUSINESS' ? 'bg-orange-100 text-orange-700' : 'bg-emerald-100 text-emerald-700'}`}>{p.customerType}</span>
-                                     </td>
-                                     <td className="p-5">
-                                        <div className="flex items-center gap-2">
-                                          <span className={`text-sm font-black px-3 py-1 rounded-full ${isOut ? 'bg-red-100 text-red-700' : isLow ? 'bg-amber-100 text-amber-700' : 'bg-emerald-50 text-emerald-700'}`}>{isOut ? '❌ Out' : isLow ? `⚠️ ${stock}` : `✅ ${stock}`}</span>
-                                          <button onClick={async () => { const ns = prompt(`Update stock for "${p.name}":`, stock); if (ns === null) return; const n = parseInt(ns, 10); if (isNaN(n) || n < 0) { alert('Invalid'); return; } const fd = new FormData(); fd.append('stock', n); const res = await updateProduct(p.id, fd); if (res.success) loadInitialData(); else alert('Error: ' + res.error); }} className="text-[10px] font-black text-blue-500 hover:underline">Edit</button>
+                                        <div>
+                                           <h3 className="font-black text-slate-800 text-lg leading-tight">General / Uncategorized</h3>
+                                           <p className="text-xs text-slate-400 font-extrabold uppercase tracking-wider mt-0.5">{filteredUncategorized.length} {filteredUncategorized.length === 1 ? 'Product' : 'Products'}</p>
                                         </div>
-                                     </td>
-                                     <td className="p-5">
-                                        <div className="flex flex-col">
-                                          {(p.customerType === 'BOTH' || p.customerType === 'NORMAL') && (
-                                            <span className="font-black text-slate-900 text-sm">C: ₹{p.b2cNewPrice ? Number(p.b2cNewPrice).toFixed(2) : '-'} <span className="text-[10px] text-gray-400 line-through font-bold">₹{p.b2cOldPrice ? Number(p.b2cOldPrice).toFixed(2) : '-'}</span></span>
-                                          )}
-                                          {(p.customerType === 'BOTH' || p.customerType === 'BUSINESS') && (
-                                            <span className="font-black text-[var(--secondary)] text-sm">B: ₹{p.b2bNewPrice ? Number(p.b2bNewPrice).toFixed(2) : '-'} <span className="text-[10px] text-gray-400 line-through font-bold">₹{p.b2bOldPrice ? Number(p.b2bOldPrice).toFixed(2) : '-'}</span></span>
-                                          )}
+                                     </div>
+                                     
+                                     <div className="flex items-center gap-3 justify-end">
+                                        <div className={`p-2 bg-white rounded-xl shadow-sm border border-slate-100 text-slate-400 transition-transform duration-300 ${showExpanded ? 'rotate-180' : ''}`}>
+                                           <ChevronDown size={18} strokeWidth={2.5} />
                                         </div>
-                                     </td>
-                                     <td className="p-5 text-right">
-                                        <button onClick={() => { 
-                                          setEditingProduct(p); 
-                                          setSelectedCategoryId(p.categoryId || '');
-                                          setCustomerType(p.customerType || 'BOTH');
-                                          setImageFiles([]);
-                                          setImagePreviews([]);
-                                          
-                                          // Initialize tiers from product data
-                                          try {
-                                             setB2bTiers(p.b2bTiers ? JSON.parse(p.b2bTiers) : []); } catch (e) {} try { setProductVariants(p.variants ? (typeof p.variants === 'string' ? JSON.parse(p.variants) : p.variants) : []);
-                                          } catch (e) {
-                                             setB2bTiers([]);
-                                          }
-                                          
-                                          setIsProductModalOpen(true); 
-                                        }} className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition mr-2"><Edit size={18} /></button>
-                                        <button onClick={() => handleDeleteProduct(p.id)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition"><Trash size={18} /></button>
-                                     </td>
-                                  </tr>
-                                );
-                                 })}
-                             </tbody>
-                          </table>
-                       </div>
-                    </div>
-                  )}
+                                     </div>
+                                  </div>
+                                  
+                                  {showExpanded && (
+                                     <div className="p-2 sm:p-5 overflow-x-auto">
+                                        <table className="w-full text-left border-collapse">
+                                           <thead>
+                                              <tr className="bg-slate-50/50 text-[10px] sm:text-xs uppercase tracking-widest text-slate-400 font-black border-b border-slate-100">
+                                                 <th className="p-4 sm:p-5">Product</th>
+                                                 <th className="p-4 sm:p-5">Type</th>
+                                                 <th className="p-4 sm:p-5">Stock</th>
+                                                 <th className="p-4 sm:p-5">Price (B2C/B2B)</th>
+                                                 <th className="p-4 sm:p-5 text-right">Actions</th>
+                                              </tr>
+                                           </thead>
+                                           <tbody className="divide-y divide-slate-50">
+                                              {filteredUncategorized.map(p => {
+                                                 const stock = Number(p.stock) || 0;
+                                                 const isOut = stock <= 0;
+                                                 const isLow = stock > 0 && stock <= 10;
+                                                 let imgSrc = 'https://placehold.co/100';
+                                                 try { if (p.images) imgSrc = JSON.parse(p.images)[0] || imgSrc; } catch {}
+                                                 return (
+                                                    <tr key={p.id} className="hover:bg-slate-50/30 transition text-sm">
+                                                       <td className="p-4 sm:p-5 flex items-center gap-3 sm:gap-4">
+                                                          <img src={imgSrc} alt={p.name} className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl object-cover border border-slate-100 shadow-sm" />
+                                                          <div>
+                                                             <div className="flex items-center gap-2 flex-wrap">
+                                                                <p className="font-black text-slate-800">{p.name}</p>
+                                                                {p.isBulkOnly && <span className="bg-amber-100 text-amber-700 text-[8px] sm:text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-tighter">Bulk Only</span>}
+                                                             </div>
+                                                             <p className="text-[10px] sm:text-xs text-slate-400 font-bold">{p.unit} {p.packagingSize ? `\u00b7 ${p.packagingSize}` : ''}</p>
+                                                          </div>
+                                                       </td>
+                                                       <td className="p-4 sm:p-5">
+                                                          <span className={`px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-[10px] sm:text-xs font-black ${p.customerType === 'BOTH' ? 'bg-indigo-50 text-indigo-700 border border-indigo-100/30' : p.customerType === 'BUSINESS' ? 'bg-orange-50 text-orange-700 border border-orange-100/30' : 'bg-emerald-50 text-emerald-700 border border-emerald-100/30'}`}>{p.customerType}</span>
+                                                       </td>
+                                                       <td className="p-4 sm:p-5">
+                                                          <div className="flex items-center gap-2">
+                                                             <span className={`text-[11px] sm:text-xs font-black px-2 py-0.5 sm:px-3 sm:py-1 rounded-full ${isOut ? 'bg-red-50 text-red-700 border border-red-100/20' : isLow ? 'bg-amber-50 text-amber-700 border border-amber-100/20' : 'bg-emerald-50 text-emerald-700 border border-emerald-100/20'}`}>{isOut ? '❌ Out' : isLow ? `⚠️ ${stock}` : `✅ ${stock}`}</span>
+                                                             <button 
+                                                               onClick={async () => { 
+                                                                  const ns = prompt(`Update stock for "${p.name}":`, stock); 
+                                                                  if (ns === null) return; 
+                                                                  const n = parseInt(ns, 10); 
+                                                                  if (isNaN(n) || n < 0) { alert('Invalid stock input'); return; } 
+                                                                  const fd = new FormData(); 
+                                                                  fd.append('stock', n); 
+                                                                  const res = await updateProduct(p.id, fd); 
+                                                                  if (res.success) loadInitialData(); 
+                                                                  else alert('Error updating stock: ' + res.error); 
+                                                               }} 
+                                                               className="text-[10px] font-black text-blue-500 hover:underline"
+                                                             >
+                                                                Edit
+                                                             </button>
+                                                          </div>
+                                                       </td>
+                                                       <td className="p-4 sm:p-5">
+                                                          <div className="flex flex-col gap-0.5">
+                                                             {(p.customerType === 'BOTH' || p.customerType === 'NORMAL') && (
+                                                                <span className="font-black text-slate-800 text-xs sm:text-sm">C: ₹{p.b2cNewPrice ? Number(p.b2cNewPrice).toFixed(2) : '-'} <span className="text-[10px] text-slate-400 line-through font-bold">₹{p.b2cOldPrice ? Number(p.b2cOldPrice).toFixed(2) : '-'}</span></span>
+                                                             )}
+                                                             {(p.customerType === 'BOTH' || p.customerType === 'BUSINESS') && (
+                                                                <span className="font-black text-[var(--secondary)] text-xs sm:text-sm">B: ₹{p.b2bNewPrice ? Number(p.b2bNewPrice).toFixed(2) : '-'} <span className="text-[10px] text-slate-400 line-through font-bold">₹{p.b2bOldPrice ? Number(p.b2bOldPrice).toFixed(2) : '-'}</span></span>
+                                                             )}
+                                                          </div>
+                                                       </td>
+                                                       <td className="p-4 sm:p-5 text-right whitespace-nowrap">
+                                                          <button 
+                                                            onClick={() => { 
+                                                               setEditingProduct(p); 
+                                                               setSelectedCategoryId(p.categoryId || '');
+                                                               setCustomerType(p.customerType || 'BOTH');
+                                                               setImageFiles([]);
+                                                               setImagePreviews([]);
+                                                               try { setB2bTiers(p.b2bTiers ? JSON.parse(p.b2bTiers) : []); } catch (e) { setB2bTiers([]); }
+                                                               try { setProductVariants(p.variants ? (typeof p.variants === 'string' ? JSON.parse(p.variants) : p.variants) : []); } catch (e) { setProductVariants([]); }
+                                                               setIsProductModalOpen(true); 
+                                                            }} 
+                                                            className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-xl transition mr-2 inline-block"
+                                                          >
+                                                             <Edit size={16} />
+                                                          </button>
+                                                          <button onClick={() => handleDeleteProduct(p.id)} className="p-1.5 text-red-500 hover:bg-red-50 rounded-xl transition inline-block"><Trash size={16} /></button>
+                                                       </td>
+                                                    </tr>
+                                                 );
+                                              })}
+                                           </tbody>
+                                        </table>
+                                     </div>
+                                  )}
+                               </div>
+                             );
+                           })()}
+                         </div>
+                      </div>
+                    );
+                  })()}
 
                   {/* STORE MANAGEMENT */}
                   {activeTab === 'stores' && (

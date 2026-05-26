@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
+import { LoadingProvider, useLoading } from './context/LoadingContext';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import Home from './pages/Home';
@@ -40,29 +41,36 @@ function urlBase64ToUint8Array(base64String) {
 }
 
 function App() {
-  // Only show splash loader when landing directly on the homepage.
-  // This prevents Googlebot from seeing a 3-second blank screen on /search, /product/:id, etc.
-  const isHomepageEntry = window.location.pathname === '/';
-  const [isInitialLoad, setIsInitialLoad] = useState(isHomepageEntry);
-
   return (
-    <AuthProvider>
-      <CartProvider>
-        <AppContent isInitialLoad={isInitialLoad} setIsInitialLoad={setIsInitialLoad} />
-      </CartProvider>
-    </AuthProvider>
+    <LoadingProvider>
+      <AuthProvider>
+        <CartProvider>
+          <AppContent />
+        </CartProvider>
+      </AuthProvider>
+    </LoadingProvider>
   );
 }
 
-const AppContent = ({ isInitialLoad, setIsInitialLoad }) => {
+const AppContent = () => {
   const { user } = useAuth();
+  const { isLoading, startLoading, stopLoading } = useLoading();
   const [settings, setSettings] = useState(null);
 
   useEffect(() => {
-    fetchSettings().then(data => {
-      if (data) setSettings(data);
-    });
-  }, []);
+    const loadSettings = async () => {
+      startLoading();
+      try {
+        const data = await fetchSettings();
+        if (data) setSettings(data);
+      } catch (err) {
+        console.error('App init error:', err);
+      } finally {
+        stopLoading();
+      }
+    };
+    loadSettings();
+  }, [startLoading, stopLoading]);
 
   // Launch Popup State
   const [showLaunchPopup, setShowLaunchPopup] = useState(false);
@@ -194,7 +202,7 @@ const AppContent = ({ isInitialLoad, setIsInitialLoad }) => {
 
       {/* Global Loader Overlay */}
       <AnimatePresence mode="wait">
-        {isInitialLoad && <GlobalLoader onFinish={() => setIsInitialLoad(false)} />}
+        {isLoading && <GlobalLoader />}
       </AnimatePresence>
 
       <div className="flex flex-col min-h-screen" data-user-role={user?.role}>

@@ -5,12 +5,14 @@ import { fetchProducts, fetchCategories } from '../services/api';
 import { Search, ChevronDown, Filter } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
+import { useLoading } from '../context/LoadingContext';
 import useSEO from '../hooks/useSEO';
 
 const CategoryPage = () => {
   const { slug } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { startLoading, stopLoading } = useLoading();
   const [category, setCategory] = useState(null);
 
   useSEO({
@@ -32,6 +34,7 @@ const CategoryPage = () => {
   useEffect(() => {
     const loadInitialData = async () => {
       setLoading(true);
+      startLoading();
       try {
         const [allProdsRaw, allCatsRaw] = await Promise.all([
           fetchProducts(),
@@ -65,6 +68,7 @@ const CategoryPage = () => {
         setCategories([]);
       } finally {
         setLoading(false);
+        stopLoading();
       }
     };
     loadInitialData();
@@ -155,11 +159,7 @@ const CategoryPage = () => {
         </div>
 
         {/* Product Grid */}
-        {loading ? (
-             <div className="flex justify-center py-20">
-                <div className="w-10 h-10 border-4 border-slate-200 border-t-[var(--secondary)] rounded-full animate-spin"></div>
-             </div>
-        ) : processedProducts.length > 0 ? (
+        {loading ? null : processedProducts.length > 0 ? (
              <motion.div 
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                 className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-2 md:gap-4"

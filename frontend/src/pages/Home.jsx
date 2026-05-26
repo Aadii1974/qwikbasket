@@ -4,6 +4,7 @@ import useSEO from '../hooks/useSEO';
 import ProductCard from '../components/ProductCard';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
+import { useLoading } from '../context/LoadingContext';
 import {
   ChevronRight, ChevronLeft, Star, TrendingUp, Package, Truck, ShieldCheck,
   Leaf, Clock, Award, Zap, Image as ImageIcon, Rocket, Timer,
@@ -588,6 +589,7 @@ const DeliverySection = ({ deliveryImage }) => {
 // ── Main Home ───────────────────────────────────────────────────────────────
 const Home = () => {
   const { user } = useAuth();
+  const { startLoading, stopLoading } = useLoading();
   useSEO({
     title: 'Fresh Organic Grocery & Farm Delivery – Order Online',
     description: 'Real Farms delivers fresh organic groceries, dairy, fruits & vegetables straight from the farm to your doorstep in 45–60 mins. Same-day & scheduled delivery. Best farm-direct prices. Order now!',
@@ -606,6 +608,7 @@ const Home = () => {
   useEffect(() => {
     const loadAll = async () => {
       setIsLoading(true);
+      startLoading();
       try {
         const [psRaw, ss, cs, sections, settingsData, packData] = await Promise.all([
           fetchProducts(), fetchStores(), fetchCategories(), fetchHomeSections(), fetchSettings(), fetchValuePacks()
@@ -637,6 +640,7 @@ const Home = () => {
         console.error('Home loading error:', err);
       } finally {
         setIsLoading(false);
+        stopLoading();
       }
     };
     loadAll();

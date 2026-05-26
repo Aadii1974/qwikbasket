@@ -4,6 +4,7 @@ import { fetchProductById } from '../services/api';
 import useSEO from '../hooks/useSEO';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
+import { useLoading } from '../context/LoadingContext';
 import { ChevronLeft, Plus, Minus, Star, ShieldCheck, Truck, Clock, BarChart3, Heart, Share2, Info, CheckCircle2, Package, ChevronDown, ShoppingCart } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -12,6 +13,7 @@ const ProductPage = () => {
   const navigate = useNavigate();
   const { cartItems, addToCart, updateQuantity, removeFromCart, getTieredPrice, cartCount } = useCart();
   const { user } = useAuth();
+  const { startLoading, stopLoading } = useLoading();
   
   const [product, setProduct] = useState(null);
   const [allProducts, setAllProducts] = useState([]);
@@ -130,6 +132,7 @@ const ProductPage = () => {
   useEffect(() => {
     const loadProduct = async () => {
       setLoading(true);
+      startLoading();
       try {
         const baseId = id.split('_')[0];
         const variantId = id.split('_')[1];
@@ -152,6 +155,7 @@ const ProductPage = () => {
         console.error(err);
       } finally {
         setLoading(false);
+        stopLoading();
       }
     };
     loadProduct();
@@ -169,11 +173,7 @@ const ProductPage = () => {
   // ── Early Returns ────────────────────────────────────────────────────
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center h-screen bg-white">
-        <div className="w-12 h-12 border-[3px] border-slate-100 border-t-[var(--secondary)] rounded-full animate-spin"></div>
-      </div>
-    );
+    return null;
   }
 
   if (!product) {

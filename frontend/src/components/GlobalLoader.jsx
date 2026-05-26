@@ -11,13 +11,16 @@ const GlobalLoader = ({ onFinish }) => {
       setCurrentItem(prev => (prev + 1) % FEED_ITEMS.length);
     }, 450);
 
-    const timeout = setTimeout(() => {
-      onFinish();
-    }, 3000); 
+    let timeout;
+    if (onFinish) {
+      timeout = setTimeout(() => {
+        onFinish();
+      }, 3000); 
+    }
 
     return () => {
       clearInterval(itemInterval);
-      clearTimeout(timeout);
+      if (timeout) clearTimeout(timeout);
     };
   }, [onFinish]);
 

@@ -1,5 +1,25 @@
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
+// Helper for fetching with a timeout (default 4 seconds) to prevent infinite pending state
+const fetchWithTimeout = async (url, options = {}, timeoutMs = 4000) => {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: options.signal || controller.signal,
+    });
+    return response;
+  } catch (err) {
+    if (err.name === 'AbortError') {
+      console.warn(`[API Timeout] ${url} took longer than ${timeoutMs}ms`);
+    }
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
+};
+
 // ── Lightweight client-side request cache (TTL: 60 s) ──────────────────────
 // Prevents redundant fetches when navigating between pages in the same session.
 const _cache = new Map(); // url → { data, expires }
@@ -11,13 +31,13 @@ const cachedFetch = async (url, options) => {
   if (isPublicGet && !options?.headers?.Authorization) {
     const hit = _cache.get(url);
     if (hit && hit.expires > Date.now()) return hit.data.clone();
-    const res = await fetch(url, options);
+    const res = await fetchWithTimeout(url, options);
     if (res.ok) {
       _cache.set(url, { data: res.clone(), expires: Date.now() + CACHE_TTL });
     }
     return res;
   }
-  return fetch(url, options);
+  return fetchWithTimeout(url, options);
 };
 
 // Helper for auth headers — must be before any functions that use it

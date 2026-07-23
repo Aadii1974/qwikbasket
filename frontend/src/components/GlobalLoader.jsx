@@ -11,16 +11,14 @@ const GlobalLoader = ({ onFinish }) => {
       setCurrentItem(prev => (prev + 1) % FEED_ITEMS.length);
     }, 450);
 
-    let timeout;
-    if (onFinish) {
-      timeout = setTimeout(() => {
-        onFinish();
-      }, 3000); 
-    }
+    // Auto-dismiss after 2 seconds to ensure page content is always accessible
+    const safetyTimeout = setTimeout(() => {
+      if (onFinish) onFinish();
+    }, 2000);
 
     return () => {
       clearInterval(itemInterval);
-      if (timeout) clearTimeout(timeout);
+      clearTimeout(safetyTimeout);
     };
   }, [onFinish]);
 
@@ -28,8 +26,8 @@ const GlobalLoader = ({ onFinish }) => {
     <motion.div 
       initial={{ opacity: 1 }}
       exit={{ opacity: 0, scale: 1.05 }}
-      transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-      className="fixed inset-0 z-[100] bg-white flex flex-col items-center justify-center overflow-hidden"
+      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+      className="fixed inset-0 z-[100] bg-white flex flex-col items-center justify-center overflow-hidden pointer-events-auto"
     >
       {/* ── Soft Background Accents ── */}
       <div className="absolute inset-0 z-0">

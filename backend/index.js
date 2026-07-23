@@ -58,17 +58,21 @@ app.use((err, req, res, next) => {
 
 const startServer = async () => {
   try {
-    await connectDB();
+    const dbConnected = await connectDB();
 
     // Prevent 'Too many keys specified' by disabling alter: true 
-    try {
-      await sequelize.sync();
-    } catch (syncErr) {
-      if (process.env.RENDER === 'true') {
-        throw syncErr; // Enforce sync on production / Render
-      } else {
-        console.warn('⚠️ Sequelize sync failed locally. If you need database functionality, ensure MySQL is running:', syncErr.message);
+    if (dbConnected) {
+      try {
+        await sequelize.sync();
+      } catch (syncErr) {
+        if (process.env.RENDER === 'true') {
+          throw syncErr; // Enforce sync on production / Render
+        } else {
+          console.warn('⚠️ Sequelize sync failed locally. If you need database functionality, ensure MySQL is running:', syncErr.message);
+        }
       }
+    } else {
+      console.warn('⚠️ Skipping sequelize.sync because the database connection is unavailable.');
     }
 
     app.listen(PORT, () => {

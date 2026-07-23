@@ -59,18 +59,15 @@ const AppContent = () => {
 
   useEffect(() => {
     const loadSettings = async () => {
-      startLoading();
       try {
         const data = await fetchSettings();
         if (data) setSettings(data);
       } catch (err) {
         console.error('App init error:', err);
-      } finally {
-        stopLoading();
       }
     };
     loadSettings();
-  }, [startLoading, stopLoading]);
+  }, []);
 
   // Launch Popup State
   const [showLaunchPopup, setShowLaunchPopup] = useState(false);
